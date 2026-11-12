@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendfloor Bodenplan 017</title>
+<title>Trendfloor Bodenplan 018</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#3563e0">
 <meta name="mobile-web-app-capable" content="yes">
@@ -100,7 +100,7 @@ details.sub>summary{min-height:52px;display:flex;align-items:center;font-weight:
 <body>
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>Bodenplan <span class="chip">v17</span></h1><small id="projLbl"></small></div>
+  <div class="ttl"><h1>Bodenplan <span class="chip">v18</span></h1><small id="projLbl"></small></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">↓<span class="lbl"> Sicherung</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -653,9 +653,38 @@ function planCalc(U,L,modeIn){
     if(Math.abs(a1-a2)<0.05)br.push({a:(a1+a2)/2,c0:Math.min(c1,c2),c1:Math.max(c1,c2)});
   }));
   const rows=Math.ceil((cmax-cmin)/B-1e-9),lt=i=>String.fromCharCode(97+i);
-  let prev=[],pool=[],boards=0;const pieces=[],waste=[];
+  let prev=[];const pieces=[],waste=[];
   const mind=j=>prev.length?Math.min(...prev.map(q=>Math.abs(q-j))):9;
-  const fresh=len=>{const n=++boards,rest=LB-len;if(rest<1e-6)return{label:""+n,kind:"full"};if(rest>=minR)pool.push({n,len:rest,li:1});else waste.push({label:n+"b",len:rest});return{label:n+"a",kind:"cut"};};
+  /* Verlegeregel (Nut und Feder): Ein Stoß in der Reihe ist nur Werksende an Werksende möglich.
+     Schnittkanten liegen deshalb nur an Wänden/Hindernissen. Eine Reihe besteht aus:
+     erstem Stück (Schnitt an der Wand) + ganzen Platten + letztem Stück (Schnitt an der Wand).
+     Ein Rest hat nach dem Zuschnitt noch ein Werksende (fac) oder nicht mehr (nur wand-zu-wand nutzbar). */
+  const real={pool:[],n:0,w:0,waste};
+  const getPiece=(cx,len,two)=>{
+    const P=cx.pool;let bi=-1;
+    if(!two){
+      P.forEach((p,i)=>{if(p.fac&&Math.abs(p.len-len)<1e-6)bi=i;});
+      if(bi<0)P.forEach((p,i)=>{if(p.fac&&p.len>len&&(bi<0||p.len<P[bi].len))bi=i;});
+      if(bi>=0){
+        const p=P.splice(bi,1)[0],rest=p.len-len;
+        if(rest>=minR){P.push({n:p.n,len:rest,li:p.li+1,fac:false});cx.w+=rest*0.5;}
+        else if(rest>1e-6){cx.waste.push({label:p.n+lt(p.li+1),len:rest});cx.w+=rest;}
+        return{label:p.n+lt(p.li),kind:"rest"};
+      }
+    }else{
+      P.forEach((p,i)=>{if(p.len>=len-1e-6&&(bi<0||p.len<P[bi].len))bi=i;});
+      if(bi>=0){
+        const p=P.splice(bi,1)[0],rest=p.len-len;
+        if(rest>=minR)P.push({n:p.n,len:rest,li:p.li+1,fac:p.fac});
+        else if(rest>1e-6){cx.waste.push({label:p.n+lt(p.li+1),len:rest});cx.w+=rest;}
+        return{label:p.n+lt(p.li),kind:"rest"};
+      }
+    }
+    const n=++cx.n,rest=LB-len;cx.nb=(cx.nb||0)+1;
+    if(rest<1e-6)return{label:""+n,kind:"full"};
+    if(rest>=minR)P.push({n,len:rest,li:1,fac:true});else{cx.waste.push({label:n+"b",len:rest});cx.w+=rest;}
+    return{label:n+"a",kind:"cut"};
+  };
   for(let k=0;k<rows;k++){
     const c0=L.flip==="1"?cmax-(k+1)*B:cmin+k*B;
     let iv=[];
@@ -665,34 +694,51 @@ function planCalc(U,L,modeIn){
     iv.forEach(x=>{const l=mg[mg.length-1];if(l&&x[0]-l[1]<=0.35&&br.some(b=>b.a>=l[1]-0.05&&b.a<=x[0]+0.05&&Math.min(b.c1,c0+B)-Math.max(b.c0,c0)>=0.3))l[1]=x[1];else mg.push([x[0],x[1]]);});
     const cur=[];
     mg.forEach(([A,E])=>{
-      let pos=A;
-      while(E-pos>1e-6){
-        const rem=E-pos;let len,pc;
-        if(rem<=LB+1e-6){
-          let bi=-1;pool.forEach((p,i)=>{if(p.len>=rem-1e-6&&(bi<0||p.len<pool[bi].len))bi=i;});
-          if(bi>=0){
-            const p=pool.splice(bi,1)[0],rest=p.len-rem;pc={label:p.n+lt(p.li),kind:"rest"};
-            if(rest>=minR)pool.push({n:p.n,len:rest,li:p.li+1});else if(rest>1e-6)waste.push({label:p.n+lt(p.li+1),len:rest});
-          }else pc=fresh(rem);
-          len=rem;
-        }else{
-          let take=LB;if(rem-take<minR)take=rem-minR;
-          let u=-1;
-          for(let x=take;x>=minR;x-=0.01){const d=mind(pos+x);if(d>=stg-1e-9&&d<=stm+1e-9){u=x;break;}}
-          if(u<0)for(let x=take;x>=minR;x-=0.01){if(mind(pos+x)>=stg-1e-9){u=x;break;}}
-          if(u<0)u=take;
-          let bi=-1;pool.forEach((p,i)=>{if(p.len<=u+1e-6&&p.len>=minR&&mind(pos+p.len)>=stg-1e-9&&(bi<0||p.len>pool[bi].len))bi=i;});
-          if(bi>=0){const p=pool.splice(bi,1)[0];len=p.len;pc={label:p.n+lt(p.li),kind:"rest"};}
-          else{len=u;pc=fresh(u);}
-          cur.push(pos+len);
-        }
-        pieces.push({a0:pos,a1:pos+len,c0,label:pc.label,kind:pc.kind});
-        pos+=len;
+      const S=E-A;
+      if(S<=LB+1e-6){
+        const pc=getPiece(real,S,true);
+        pieces.push({a0:A,a1:E,c0,label:pc.label,kind:pc.kind});
+        return;
       }
+      const mr=Math.min(minR,S/2);
+      const mLo=Math.max(1,Math.ceil(S/LB-1-1e-9)),mHi=Math.max(mLo,Math.floor((S-2*mr)/LB+1+1e-9));
+      let best=null;
+      for(let mm=mLo;mm<=mHi;mm++){
+        const R=S-(mm-1)*LB,fLo=Math.max(mr,R-LB),fHi=Math.min(LB,R-mr);
+        if(fLo>fHi+1e-9)continue;
+        const cand=[];
+        for(let x=fHi;x>=fLo-1e-9;x-=0.01)cand.push(x);
+        cand.push(fLo);
+        real.pool.forEach(p=>{if(p.fac)[p.len,R-p.len].forEach(x=>{if(x>=fLo-1e-9&&x<=fHi+1e-9)cand.push(x);});});
+        cand.forEach(f0=>{
+          const f=Math.min(fHi,Math.max(fLo,f0)),g=R-f;
+          let d=9;for(let j=0;j<mm;j++)d=Math.min(d,mind(A+f+j*LB));
+          const sc={pool:real.pool.map(p=>({...p})),n:real.n,nb:0,w:0,waste:[]};
+          getPiece(sc,f,false);getPiece(sc,g,false);
+          const cost=(sc.nb+mm-1)*100+sc.w*10,ok=d>=stg-1e-9,dc=Math.min(d,0.8);
+          let better;
+          if(!best)better=true;
+          else if(ok!==best.ok)better=ok;
+          else if(ok)better=cost<best.cost-1e-9||(Math.abs(cost-best.cost)<1e-9&&dc>best.dc+1e-9);
+          else better=d>best.d+1e-9||(Math.abs(d-best.d)<1e-9&&cost<best.cost-1e-9);
+          if(better)best={f,g,mm,d,dc,cost,ok};
+        });
+      }
+      if(!best)best={f:S/2,g:S/2,mm:1};
+      let pos=A;
+      const p1=getPiece(real,best.f,false);
+      pieces.push({a0:pos,a1:pos+best.f,c0,label:p1.label,kind:p1.kind});pos+=best.f;cur.push(pos);
+      for(let j=1;j<best.mm;j++){
+        const n=++real.n;
+        pieces.push({a0:pos,a1:pos+LB,c0,label:""+n,kind:"full"});pos+=LB;cur.push(pos);
+      }
+      const p2=getPiece(real,E-pos,false);
+      pieces.push({a0:pos,a1:E,c0,label:p2.label,kind:p2.kind});
     });
     prev=cur;
   }
-  pool.forEach(p=>waste.push({label:p.n+lt(p.li),len:p.len,unused:true}));
+  real.pool.forEach(p=>waste.push({label:p.n+lt(p.li),len:p.len,unused:true}));
+  const boards=real.n;
   return{boards,rows,pieces,hz,B,LB,waste};
 }
 function gapArea(U){
@@ -1237,7 +1283,7 @@ $("copy").onclick=async()=>{
 $("backup").onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="Trendfloor_Bodenplan_017.json";a.click();
+  a.href=url;a.download="Trendfloor_Bodenplan_018.json";a.click();
   URL.revokeObjectURL(url);
 };
 $("import").onclick=()=>$("file").click();
