@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendfloor Bodenplan 025</title>
+<title>Trendfloor Bodenplan 026</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b2a5b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -148,8 +148,8 @@ input,select{min-height:46px}
 <body>
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 025 · <span id="projLbl"></span></div></div>
-  <button id="topExport" class="topbtn" aria-label="Sicherung">↓<span class="lbl"> Sicherung</span></button>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 026 · <span id="projLbl"></span></div></div>
+  <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
   <button data-t="u"><span>🏠</span>Übersicht</button>
@@ -162,7 +162,7 @@ input,select{min-height:46px}
 <p id="saveStatus" class="status"></p>
 
 <section id="splash" data-tab="h">
-  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 025</span></div>
+  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 026</span></div>
   <div class="sp-img"></div>
   <div class="sp-body">
     <h2 id="hello">Guten Tag!</h2>
@@ -172,7 +172,8 @@ input,select{min-height:46px}
   </div>
 </section>
 <section id="overview" data-tab="u">
-  <div class="card proj"><span class="plbl">📁 Aktuelles Projekt</span><div class="pname" id="hName"></div><div class="psub" id="hSub"></div><button id="hNew" class="wide">＋ Baustelle wechseln / neu anlegen</button></div>
+  <div class="card proj"><span class="plbl">📁 Aktuelles Projekt</span><div class="pname" id="hName"></div><div class="psub" id="hSub"></div><button id="hNew" class="wide">＋ Baustelle wechseln / neu anlegen</button>
+  <div class="row"><button id="hSave" class="primary">💾 Projekt speichern</button><button id="hOpen">📂 Projekt öffnen</button></div></div>
   <div class="tiles">
     <button class="tile" data-go="w|chips"><i>🚪</i><b>Räume</b><small>Räume verwalten</small></button>
     <button class="tile" data-go="w|planCard"><i>📐</i><b>Bodenplan</b><small>Plan zeichnen &amp; bearbeiten</small></button>
@@ -181,7 +182,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 025</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 026</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -215,7 +216,8 @@ input,select{min-height:46px}
   <div class="zoom"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢ Anpassen</button><span id="zoomLbl" class="hint"></span></div>
   <div class="zoom"><button id="pL">◀</button><button id="pU">▲</button><button id="pD">▼</button><button id="pR">▶</button></div>
   <label class="chk"><input type="checkbox" id="showAll" checked> Ganze Wohnung zeigen (mit Maßen)</label>
-  <div class="row"><button id="savePlan" class="primary wide">🖼 Plan als Bild speichern</button></div>
+  <div class="row"><button id="saveProj" class="primary wide">💾 Projekt speichern (Datei)</button></div>
+  <div class="row"><button id="savePlan" class="wide">🖼 Plan als Bild speichern</button></div>
   <p class="hint">Der Plan wird automatisch auf dem Gerät gespeichert. „Plan als Bild“ legt die ganze Wohnung als PNG ab (Teilen/Galerie/Downloads).</p>
 </section>
 
@@ -309,8 +311,9 @@ input,select{min-height:46px}
     <label>Gespeicherte Baustellen<select id="projects"></select></label>
     <button id="newProject" class="primary">+ Neue Baustelle</button>
     <h3>Sicherung</h3>
-    <button id="backup">Sicherung exportieren</button>
+    <button id="backup">Projekt speichern (Datei)</button>
     <button id="import">Sicherung importieren</button>
+    <button id="restoreBak">Frühere Stände wiederherstellen</button>
     <input type="file" id="file" accept=".json" hidden>
     <p class="hint">Alles wird automatisch auf diesem Gerät gespeichert. Für Gerätewechsel oder Sicherheit die Sicherung exportieren.</p>
   </aside>
@@ -375,7 +378,11 @@ function fillSelect(){
 }
 function persist(msg){
   try{
-    const key=$("project").value.trim()||"Ohne Name";
+    let key=$("project").value.trim()||"Ohne Name";
+    if(key!==savedKey&&db.projects[key]&&db.projects[key]!==proj){
+      let n=2;while(db.projects[key+" ("+n+")"])n++;
+      key=key+" ("+n+")";$("project").value=key;msg="Name war schon vergeben – umbenannt in „"+key+"“.";
+    }
     if(savedKey&&savedKey!==key)delete db.projects[savedKey];
     db.projects[key]=proj;savedKey=key;db.last=key;
     localStorage.setItem(KEY,JSON.stringify(db));
@@ -1410,7 +1417,7 @@ $("projects").onchange=()=>{
 $("newProject").onclick=()=>{
   const n=(prompt("Name der neuen Baustelle?")||"").trim();
   if(!n)return;
-  if(db.projects[n]){proj=norm(db.projects[n]);}
+  if(db.projects[n]){proj=norm(db.projects[n]);savedKey=n;}
   else{proj=newProj();savedKey="";}
   $("project").value=n;
   refreshAll();persist("Baustelle angelegt.");
@@ -1430,11 +1437,26 @@ $("copy").onclick=async()=>{
   catch(e){$("saveStatus").textContent="Kopieren nicht möglich.";}
 };
 
-$("backup").onclick=()=>{
-  const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
-  const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="Trendfloor_Bodenplan_025.json";a.click();
-  URL.revokeObjectURL(url);
+async function saveProject(){
+  persist();
+  const nm=($("project").value.trim()||"Bodenplan").replace(/[^\wäöüÄÖÜß -]/g,"")||"Bodenplan",name="Bodenplan_"+nm+"_"+new Date().toISOString().slice(0,10)+".json";
+  const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"}),file=new File([blob],name,{type:"application/json"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});$("saveStatus").textContent="Projekt gespeichert: "+name;return;}}
+  catch(e){if(e&&e.name==="AbortError")return;}
+  const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
+  $("saveStatus").textContent="Projekt als Datei gespeichert: "+name;
+}
+$("backup").onclick=saveProject;$("hSave").onclick=saveProject;$("saveProj").onclick=saveProject;$("hOpen").onclick=()=>$("file").click();
+$("restoreBak").onclick=()=>{
+  let n=0;
+  ["_bak1","_bak2"].forEach((sx,i)=>{try{
+    const d=JSON.parse(localStorage.getItem(KEY+sx)||"null");
+    Object.keys((d&&d.projects)||{}).forEach(k=>{
+      if(db.projects[k]&&JSON.stringify(db.projects[k])===JSON.stringify(d.projects[k]))return;
+      const m=k+" (Stand "+(i+1)+")";if(!db.projects[m]){db.projects[m]=d.projects[k];n++;}
+    });
+  }catch(e){}});
+  persist(n?n+" frühere Stände als eigene Baustellen hinzugefügt (Menü → Gespeicherte Baustellen).":"Keine früheren Stände gefunden.");
 };
 $("import").onclick=()=>$("file").click();
 $("file").onchange=async e=>{
@@ -1442,7 +1464,7 @@ $("file").onchange=async e=>{
   try{
     const d=JSON.parse(await file.text());
     if(!d||typeof d.projects!=="object")throw new Error("Ungültige Sicherungsdatei.");
-    Object.assign(db.projects,d.projects);
+    Object.keys(d.projects).forEach(k=>{let n=k,i=2;if(db.projects[n]&&JSON.stringify(db.projects[n])!==JSON.stringify(d.projects[k])){n=k+" (Import)";while(db.projects[n])n=k+" (Import "+(i++)+")";}db.projects[n]=d.projects[k];});
     if(Array.isArray(d.materials))d.materials.forEach(m=>{if(!db.materials.some(x=>x.id===m.id))db.materials.push(m);});
     const k=d.last&&db.projects[d.last]?d.last:Object.keys(d.projects)[0];
     if(k){proj=norm(db.projects[k]);savedKey=k;$("project").value=k==="Ohne Name"?"":k;}
@@ -1472,6 +1494,8 @@ window.addEventListener("resize",resizeCanvas);
 
 try{
   const raw=localStorage.getItem(KEY);
+  try{if(navigator.storage&&navigator.storage.persist)navigator.storage.persist();}catch(e){}
+  try{if(raw){const b1=localStorage.getItem(KEY+"_bak1");if(raw!==b1){if(b1)localStorage.setItem(KEY+"_bak2",b1);localStorage.setItem(KEY+"_bak1",raw);}}}catch(e){}
   if(raw){const d=JSON.parse(raw);if(d&&typeof d.projects==="object")db=d;}
 }catch(e){}
 if(!Array.isArray(db.materials))db.materials=[{id:uid(),name:"Spanplatte 2,05 × 0,94",l:2.05,b:0.94,pack:0}];
