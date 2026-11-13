@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendfloor Bodenplan 021</title>
+<title>Trendfloor Bodenplan 025</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b2a5b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -148,7 +148,7 @@ input,select{min-height:46px}
 <body>
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 021 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 025 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">↓<span class="lbl"> Sicherung</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -162,7 +162,7 @@ input,select{min-height:46px}
 <p id="saveStatus" class="status"></p>
 
 <section id="splash" data-tab="h">
-  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 021</span></div>
+  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 025</span></div>
   <div class="sp-img"></div>
   <div class="sp-body">
     <h2 id="hello">Guten Tag!</h2>
@@ -181,15 +181,16 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 021</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 025</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
   <div id="chips"></div>
   <div class="g2"><button id="addRoom">+ Raum</button><button id="addSub" title="z. B. Bad innerhalb eines Raums">+ Teilbereich</button></div>
-  <details class="more"><summary>Raum umbenennen · Belag · löschen</summary>
+  <details class="more"><summary>Raum umbenennen · Belag · Notizen · löschen</summary>
     <label>Raumname<input id="room" placeholder="Raumname"></label>
     <label>Belag<input id="belag" placeholder="z. B. Parkett Eiche"></label>
+    <label>Notizen zum Raum<textarea id="rnote" rows="3" style="width:100%;font:inherit" placeholder="z. B. Estrich, Heizkörper, Besonderheiten"></textarea></label>
     <div class="row"><button id="delRoom" class="danger">Raum löschen</button></div>
   </details>
 </section>
@@ -213,7 +214,9 @@ input,select{min-height:46px}
   <p id="toolHint" class="info"></p>
   <div class="zoom"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢ Anpassen</button><span id="zoomLbl" class="hint"></span></div>
   <div class="zoom"><button id="pL">◀</button><button id="pU">▲</button><button id="pD">▼</button><button id="pR">▶</button></div>
-  <label class="chk"><input type="checkbox" id="showAll" checked> Ganze Wohnung zeigen</label>
+  <label class="chk"><input type="checkbox" id="showAll" checked> Ganze Wohnung zeigen (mit Maßen)</label>
+  <div class="row"><button id="savePlan" class="primary wide">🖼 Plan als Bild speichern</button></div>
+  <p class="hint">Der Plan wird automatisch auf dem Gerät gespeichert. „Plan als Bild“ legt die ganze Wohnung als PNG ab (Teilen/Galerie/Downloads).</p>
 </section>
 
 <section class="card" data-tab="w">
@@ -227,6 +230,11 @@ input,select{min-height:46px}
   <h3>Wandmaße (m)</h3>
   <div id="walls"></div>
   <p class="hint">Ändert sich eine Wand, verschieben sich die folgenden Ecken. Die Schlusswand rechnet sich daraus selbst – stimmt sie nicht mit deinem Aufmaß überein, hast du ein Maß falsch.</p>
+</section>
+
+<section class="card" data-tab="w a">
+  <h2>Überblick ganze Wohnung</h2>
+  <div id="aptSum"></div>
 </section>
 
 <section class="card" data-tab="o">
@@ -323,7 +331,9 @@ const room=()=>proj.rooms[proj.active];
 const OT={door:{n:"Tür",w:0.9,c:"#d9822b"},window:{n:"Fenster",w:1.2,c:"#3bb3e0"},balcony:{n:"Balkontür",w:1.6,c:"#2e9e5b"},door2:{n:"Doppeltür",w:1.6,c:"#d9822b"},gap:{n:"Durchgang",w:1.0,c:"#7c5cbf"}};
 const SZ={door:[0.8,0.9,1],door2:[1.4,1.6,1.8,2],window:[0.6,0.9,1.2,1.5,2,2.5],balcony:[0.9,1,1.6,2,2.4,3,4],gap:[0.9,1,1.2,1.5,2]};
 const ow={},curW=t=>ow[t]||OT[t].w;
-let tab="w",tool="wall",sel=null,drag=null,undo=[],pend=null;
+let tab="w",tool="wall",sel=null,drag=null,undo=[],pend=null,auto=false,whole=false,wholeAt=0;
+const short=t=>{t=String(t||"").split("\n")[0];return t.length>26?t.slice(0,25)+"…":t;};
+const back=()=>{if(auto)setTool("wall");};
 const matOf=r=>db.materials.find(m=>m.id===r.mat)||null;
 const parentOf=r=>(r.parent&&proj.rooms.find(x=>x.id===r.parent))||null;
 const kids=r=>proj.rooms.filter(c=>c.parent===r.id);
@@ -395,10 +405,15 @@ function renderChips(){
   proj.rooms.forEach((r,i)=>{
     const b=document.createElement("button");
     b.textContent=(r.parent?"↳ ":"")+(r.name||"Raum");
-    if(i===proj.active)b.className="active";
-    b.onclick=()=>{proj.active=i;refreshAll();persist();};
+    if(i===proj.active&&!whole)b.className="active";
+    b.onclick=()=>{whole=false;proj.active=i;refreshAll();persist();};
     c.appendChild(b);
   });
+  if(proj.rooms.filter(x=>x.closed).length>1){
+    const w=document.createElement("button");w.textContent="🏠 Ganze Wohnung";if(whole)w.className="active";
+    w.onclick=()=>{whole=true;wholeAt=proj.active;refreshAll();persist();};
+    c.insertBefore(w,c.firstChild);
+  }
 }
 
 function renderCalc(){
@@ -443,6 +458,17 @@ function renderCalc(){
 function renderWalls(){
   const r=room(),n=r.pts.length,box=$("walls");
   box.innerHTML="";
+  {
+    let tot=0,cntR=0,h="";
+    proj.rooms.forEach(c=>{
+      if(!c.closed)return;
+      const s=stats(c),m=c.pts.length,L=[];tot+=s.area;cntR++;
+      for(let i=0;i<m;i++)L.push((i+1)+": "+f(edgeLen(c,i)));
+      h+=`<div class="box"><b>${esc(c.name)}</b> · ${f(s.area)} m² · Umfang ${f(s.per)} m<br>Wände (m) – ${L.join(" · ")}${c.note?"<br><i>"+esc(c.note)+"</i>":""}</div>`;
+    });
+    $("aptSum").innerHTML=cntR?h+`<div class="box"><b>Ganze Wohnung: ${f(tot)} m²</b> (${cntR} Räume)</div>`:'<p class="hint">Noch kein Raum geschlossen.</p>';
+  }
+  if(whole){box.innerHTML='<p class="hint">Zum Ändern einen Raum antippen oder oben auswählen.</p>';return;}
   const cnt=r.closed?n:n-1;
   if(cnt<1){box.innerHTML='<p class="hint">Noch keine Wand gezeichnet.</p>';return;}
   for(let i=0;i<cnt;i++){
@@ -477,7 +503,7 @@ function setLen(i,L){
 }
 
 function draw(){
-  const r=room();
+  const r=room(),WV=whole||showAll;
   if(sel&&!selValid())sel=null;
   ctx.setTransform(canvas.width/W,0,0,canvas.height/H,0,0);
   ctx.fillStyle="#fff";ctx.fillRect(0,0,W,H);
@@ -492,7 +518,7 @@ function draw(){
     const Q=arr.map(p=>({x:p.x*ppm,y:p.y*ppm}));
     ctx.beginPath();Q.forEach((q,i)=>i?ctx.lineTo(q.x,q.y):ctx.moveTo(q.x,q.y));ctx.closePath();
     ctx.fillStyle=fill;ctx.fill();ctx.strokeStyle=stroke;ctx.lineWidth=lw;ctx.stroke();
-    if(txt){ctx.fillStyle=stroke;ctx.font="bold 24px Arial";ctx.textAlign="center";ctx.textBaseline="middle";ctx.fillText(txt,Q.reduce((a,q)=>a+q.x,0)/Q.length,Q.reduce((a,q)=>a+q.y,0)/Q.length);}
+    if(txt){ctx.fillStyle=stroke;ctx.font="bold 24px Arial";ctx.textAlign="center";ctx.textBaseline="middle";{const cx=Q.reduce((a,q)=>a+q.x,0)/Q.length,cy=Q.reduce((a,q)=>a+q.y,0)/Q.length,L=txt.split("\n");L.forEach((t,i)=>ctx.fillText(t,cx,cy+(i-(L.length-1)/2)*30));}}
   };
   const par=parentOf(r);
   if(par&&par.closed)shade(par.pts,"#00000008","#9aa7b4",3,"");
@@ -500,8 +526,9 @@ function draw(){
   const UN=unitOf(r);
   proj.rooms.forEach(c=>{
     if(c===r||!c.closed||c.parent===r.id||c.id===r.parent)return;
-    if(UN.includes(c))shade(c.pts,"#2368ad22","#2368ad",6,c.name);
-    else if(showAll||(c.grp&&c.grp===r.grp))shade(c.pts,"#2368ad10","#9fb3c8",3,c.name);
+    const lb=c.name+(WV?"\n"+f(stats(c).area)+" m²":"")+(c.note?"\n"+short(c.note):"");
+    if(whole||UN.includes(c))shade(c.pts,"#2368ad22","#2368ad",6,lb);
+    else if(showAll||(c.grp&&c.grp===r.grp))shade(c.pts,"#2368ad10","#9fb3c8",3,lb);
   });
   {
     const pl=planCalc(UN,lead(r));
@@ -602,7 +629,21 @@ function draw(){
     const s=stats(r);
     const cx=P.reduce((a,p)=>a+p.x,0)/P.length,cy=P.reduce((a,p)=>a+p.y,0)/P.length;
     ctx.font="bold 34px Arial";ctx.fillStyle="#173b66";ctx.fillText(f(s.area)+" m²",cx,cy);
-    if(UN.length>1){ctx.font="bold 26px Arial";ctx.fillText("Boden gesamt "+f(ustats(r).area)+" m²",cx,cy+38);}
+    let ny=cy+36;
+    if(UN.length>1){ctx.font="bold 26px Arial";ctx.fillText("Boden gesamt "+f(ustats(r).area)+" m²",cx,cy+38);ny+=30;}
+    if(WV){ctx.font="bold 26px Arial";ctx.fillText(r.name,cx,cy-38);}
+    if(r.note){ctx.font="22px Arial";ctx.fillText(short(r.note),cx,ny);}
+  }
+  if(WV){
+    ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+    proj.rooms.forEach(c=>{
+      if(c===r||!c.closed)return;
+      const m=c.pts.length;
+      for(let i=0;i<m;i++){
+        const a=c.pts[i],b=c.pts[(i+1)%m],t=f(Math.hypot(b.x-a.x,b.y-a.y)),mx=(a.x+b.x)/2*ppm,my=(a.y+b.y)/2*ppm;
+        ctx.lineWidth=6;ctx.strokeStyle="#fff";ctx.strokeText(t,mx,my);ctx.fillStyle="#203047";ctx.fillText(t,mx,my);
+      }
+    });
   }
 }
 
@@ -618,7 +659,7 @@ function getPoint(e){
 }
 
 const HINTS={
-  wall:"Tippe die Ecken des Raums nacheinander an. Die Wände rasten waagrecht und senkrecht ein. Zum Schließen den roten Startpunkt antippen. Danach unten die echten Wandlängen eintippen. Ist der Raum geschlossen, wechselst du mit einem Tipp in einen anderen Raum.",
+  wall:"Tippe die Ecken des Raums nacheinander an. Die Wände rasten waagrecht und senkrecht ein. Zum Schließen den roten Startpunkt antippen. Danach unten die echten Wandlängen eintippen. Ganze Wohnung: Ist ein Raum geschlossen, tippst du NEBEN den Raum – dann beginnt automatisch der nächste Raum (rastet an den Nachbarwänden ein). Auf eine Wand oder in den Raum tippen = Innenwand beginnen. Auf einen anderen Raum tippen = dorthin wechseln.",
   edit:"Ecke ziehen verschiebt sie. Tür oder Fenster antippen und entlang der Wand ziehen; der Button löscht sie. Wand antippen: teilen oder löschen. Auf einen anderen Raum tippen wechselt dorthin. „Zurück“ macht den letzten Schritt rückgängig.",
   split:"Zwischenwand: Tippe zuerst eine Wand an (Start). Dann beliebig viele Punkte im Raum antippen – für Ecken, z. B. beim Bad – und zum Schluss die Gegenwand antippen.",
   view:"Tippe auf einen Raum, um ihn zu wählen.",
@@ -652,7 +693,7 @@ function fillSize(){
   sl.value=curW(tool);$("oW").value=curW(tool);
 }
 function setTool(t){
-  tool=t;
+  tool=t;auto=false;
   [["gap","tGap"],["wall","tWall"],["edit","tEdit"],["split","tSplit"],["door","tDoor"],["door2","tDoor2"],["window","tWindow"],["balcony","tBalcony"]].forEach(([k,id])=>$(id).classList.toggle("active",k===t));
   if(t!=="edit")sel=null;
   pend=null;
@@ -968,7 +1009,7 @@ function straightenAll(){
 }
 function finishStub(){
   const r=room(),A=edgePt(r,pend.i,pend.m),T=parseFloat($("nwT").value)||0.12;
-  snap();r.stubs.push({pts:[A,...pend.pts],t:T});pend=null;sel=null;
+  snap();r.stubs.push({pts:[A,...pend.pts],t:T});pend=null;sel=null;back();
   $("toolHint").textContent="Teilwand gesetzt ("+f(T*100,1)+" cm stark). Zum Löschen im Modus „Bearbeiten“ antippen.";
   changed();
 }
@@ -1085,7 +1126,7 @@ function doSplit(r,i,PA,j,PB,ins){
   proj.rooms.forEach(c=>{if(c.parent===r.id&&c.pts[0]&&!inPoly(c.pts[0].x,c.pts[0].y,p1))c.parent=r2.id;});
   proj.rooms.splice(proj.active+1,0,r2);
   undo[undo.length-1].added=r2;
-  sel=null;refreshAll();persist();
+  sel=null;refreshAll();persist();back();
   $("toolHint").textContent="Raum geteilt in „"+r.name+"“ und „"+r2.name+"“. Türen setzt du jetzt mit dem Werkzeug „Tür“.";
 }
 const KINDS=["V100 Spanplatte","Vinylboden","Parkett","Dielen","Fliese","Sonstiges"];
@@ -1171,7 +1212,9 @@ function changed(){syncLinks(room());draw();renderWalls();renderOpens();renderEd
 
 function refreshAll(){
   const r=room();
+  if(whole&&proj.active!==wholeAt)whole=false;
   renderChips();
+  $("rnote").value=r.note||"";
   $("room").value=r.name;$("belag").value=lead(r).belag||"";
   {const Ld=lead(r);calcBtns();$("flip").value=Ld.flip||"0";$("minRest").value=Ld.minRest||0.3;$("stagger").value=Ld.stagger==null?0.4:Ld.stagger;}
   $("verschnitt").value=lead(r).verschnitt;$("paket").value=lead(r).paket||"";$("tueren").value=r.tueren||"";
@@ -1181,12 +1224,26 @@ function refreshAll(){
 
 canvas.addEventListener("pointerdown",e=>{
   e.preventDefault();
+  if(whole){
+    const p0=getPoint(e),c0=proj.rooms.filter(c=>c.closed&&inPoly(p0.x/ppm,p0.y/ppm,c.pts)).sort((a,b)=>gross(a)-gross(b))[0];
+    if(c0){whole=false;proj.active=proj.rooms.indexOf(c0);refreshAll();persist();}
+    return;
+  }
   if(tool==="view"){const c=roomAt(getPoint(e));if(c){proj.active=proj.rooms.indexOf(c);refreshAll();persist();}return;}
   if(tool==="edit"){editDown(e);return;}
   if(tool==="split"){splitDown(getPoint(e));return;}
   if(tool!=="wall"){placeOpening(getPoint(e));return;}
-  const r=room(),raw=getPoint(e),pts=r.pts;
-  if(r.closed){const c=roomAt(raw);if(c){proj.active=proj.rooms.indexOf(c);refreshAll();persist();}return;}
+  let r=room(),pts=r.pts,created=false;const raw=getPoint(e);
+  if(r.closed){
+    const c=roomAt(raw);
+    if(c){proj.active=proj.rooms.indexOf(c);refreshAll();persist();return;}
+    const nb=nearestEdge(r,raw);
+    if(nb&&(nb.d<=18||inPoly(raw.x/ppm,raw.y/ppm,r.pts))){setTool("split");auto=true;splitDown(raw);return;}
+    snap(r);const nr=newRoom("Raum "+(proj.rooms.length+1));
+    undo[undo.length-1].added=nr;
+    proj.rooms.push(nr);proj.active=proj.rooms.length-1;refreshAll();
+    r=nr;pts=r.pts;created=true;
+  }
   if(pts.length>=3&&Math.hypot(raw.x-pts[0].x*ppm,raw.y-pts[0].y*ppm)<32){
     snap();r.closed=true;changed();return;
   }
@@ -1203,11 +1260,21 @@ canvas.addEventListener("pointerdown",e=>{
     if(Math.abs(x-q.x)<0.12)x=q.x;
     if(Math.abs(y-q.y)<0.12)y=q.y;
   });
+  proj.rooms.forEach(c=>{
+    if(c===r||!c.closed||!(showAll||c.id===r.parent))return;
+    const m=c.pts.length;
+    for(let k=0;k<m;k++){
+      const A=c.pts[k],B=c.pts[(k+1)%m],dx=B.x-A.x,dy=B.y-A.y,l2=dx*dx+dy*dy;
+      if(l2<1e-6)continue;
+      const t=Math.min(1,Math.max(0,((x-A.x)*dx+(y-A.y)*dy)/l2)),qx=A.x+t*dx,qy=A.y+t*dy;
+      if(Math.hypot(x-qx,y-qy)<0.12){x=qx;y=qy;}
+    }
+  });
   if(pts.length){
     const l=pts[pts.length-1];
     if(Math.hypot(x-l.x,y-l.y)<0.05)return;
   }
-  snap();
+  if(!created)snap();
   pts.push({x,y});
   changed();
 });
@@ -1303,7 +1370,7 @@ function setZoom(n){
 $("zIn").onclick=()=>{const n=ZS.find(z=>z>ppm+1e-6);if(n)setZoom(n);};
 $("zOut").onclick=()=>{const n=ZS.slice().reverse().find(z=>z<ppm-1e-6);if(n)setZoom(n);};
 $("zFit").onclick=()=>{
-  const r=room(),a=r.pts.concat((parentOf(r)||{pts:[]}).pts);
+  const r=room(),a=(showAll||whole)?[].concat(...proj.rooms.map(c=>c.pts)):r.pts.concat((parentOf(r)||{pts:[]}).pts);
   if(!a.length){ppm=100;vx=0;vy=0;setZoom(100);return;}
   const xs=a.map(p=>p.x),ys=a.map(p=>p.y),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
   const size=Math.max(x1-x0,y1-y0)+1.5;
@@ -1312,6 +1379,7 @@ $("zFit").onclick=()=>{
 };
 
 $("room").oninput=()=>{room().name=$("room").value;renderChips();renderCalc();persist();};
+$("rnote").oninput=()=>{room().note=$("rnote").value;draw();renderWalls();persist();};
 $("belag").oninput=()=>{lead(room()).belag=$("belag").value;persist();};
 $("verschnitt").oninput=()=>{lead(room()).verschnitt=parseFloat($("verschnitt").value)||0;renderCalc();persist();};
 $("paket").oninput=()=>{lead(room()).paket=parseFloat($("paket").value)||0;renderCalc();persist();};
@@ -1365,7 +1433,7 @@ $("copy").onclick=async()=>{
 $("backup").onclick=()=>{
   const blob=new Blob([JSON.stringify(db,null,2)],{type:"application/json"});
   const url=URL.createObjectURL(blob),a=document.createElement("a");
-  a.href=url;a.download="Trendfloor_Bodenplan_021.json";a.click();
+  a.href=url;a.download="Trendfloor_Bodenplan_025.json";a.click();
   URL.revokeObjectURL(url);
 };
 $("import").onclick=()=>$("file").click();
@@ -1383,6 +1451,23 @@ $("file").onchange=async e=>{
   e.target.value="";
 };
 
+$("savePlan").onclick=async()=>{
+  const sp=ppm,sx=vx,sy=vy,sa=showAll,ss=sel;
+  const a=[].concat(...proj.rooms.map(c=>c.pts));
+  if(!a.length){$("saveStatus").textContent="Noch nichts gezeichnet.";return;}
+  const xs=a.map(p=>p.x),ys=a.map(p=>p.y),x0=Math.min(...xs),x1=Math.max(...xs),y0=Math.min(...ys),y1=Math.max(...ys);
+  ppm=W/(Math.max(x1-x0,y1-y0)+1.5);vx=(x0+x1)/2-W/2/ppm;vy=(y0+y1)/2-H/2/ppm;showAll=true;sel=null;
+  canvas.width=1600;canvas.height=1600;draw();
+  const blob=await new Promise(r=>canvas.toBlob(r,"image/png"));
+  ppm=sp;vx=sx;vy=sy;showAll=sa;sel=ss;resizeCanvas();
+  const name=(($("project").value.trim()||"Bodenplan").replace(/[^\wäöüÄÖÜß -]/g,"")||"Bodenplan")+".png";
+  if(!blob){$("saveStatus").textContent="Bild konnte nicht erstellt werden.";return;}
+  const file=new File([blob],name,{type:"image/png"});
+  try{if(navigator.canShare&&navigator.canShare({files:[file]})){await navigator.share({files:[file],title:name});$("saveStatus").textContent="Plan geteilt/gespeichert.";return;}}
+  catch(e){if(e&&e.name==="AbortError")return;}
+  const url=URL.createObjectURL(blob),l=document.createElement("a");l.href=url;l.download=name;l.click();URL.revokeObjectURL(url);
+  $("saveStatus").textContent="Plan als Bild heruntergeladen.";
+};
 window.addEventListener("resize",resizeCanvas);
 
 try{
