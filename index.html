@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendfloor Bodenplan 027</title>
+<title>Trendfloor Bodenplan 028</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b2a5b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -143,12 +143,13 @@ body.home main>*:not(#splash),body.menu main>*:not(#overview){display:none!impor
 .sp-foot{text-align:center;color:#35508a;font-size:.82rem;margin-top:12px}
 button{min-height:46px}
 input,select{min-height:46px}
+#toast{position:fixed;left:50%;bottom:90px;transform:translateX(-50%);background:#1f7a3f;color:#fff;padding:12px 20px;border-radius:999px;font-weight:700;z-index:9999;opacity:0;pointer-events:none;transition:opacity .2s;max-width:90%;text-align:center}#toast.on{opacity:1}
 </style>
 </head>
 <body>
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 027 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 028 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -162,7 +163,7 @@ input,select{min-height:46px}
 <p id="saveStatus" class="status"></p>
 
 <section id="splash" data-tab="h">
-  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 027</span></div>
+  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 028</span></div>
   <div class="sp-img"></div>
   <div class="sp-body">
     <h2 id="hello">Guten Tag!</h2>
@@ -182,7 +183,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 027</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 028</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -268,8 +269,8 @@ input,select{min-height:46px}
     <label>Name<input id="mName" placeholder="z. B. V100 Spanplatte"></label>
     <label>Typ<select id="mKind"></select></label>
     <div class="g2">
-      <label>Länge (m)<input id="mL" type="number" step="0.01" inputmode="decimal"></label>
-      <label>Breite (m)<input id="mB" type="number" step="0.01" inputmode="decimal"></label>
+      <label>Länge (mm)<input id="mL" type="number" step="1" inputmode="numeric" placeholder="z. B. 2050"></label>
+      <label>Breite (mm)<input id="mB" type="number" step="1" inputmode="numeric" placeholder="z. B. 940"></label>
       <label>Dicke (mm)<input id="mD" type="number" step="0.1" inputmode="decimal"></label>
       <label>Stück/Paket<input id="mP" type="number" step="1" inputmode="numeric"></label>
     </div>
@@ -1138,12 +1139,12 @@ function doSplit(r,i,PA,j,PB,ins){
 }
 const KINDS=["V100 Spanplatte","Vinylboden","Parkett","Dielen","Fliese","Sonstiges"];
 let matEdit=null;
-const matLine=m=>(m.kind||"Material")+" · "+f(m.l)+" × "+f(m.b)+" m"+(m.d>0?" · "+f(m.d,1)+" mm":"")+(m.pack>0?" · "+m.pack+" Stk/Paket":"");
+const matLine=m=>(m.kind||"Material")+" · "+f(m.l*1000,0)+" × "+f(m.b*1000,0)+" mm"+(m.d>0?" · "+f(m.d,1)+" mm":"")+(m.pack>0?" · "+m.pack+" Stk/Paket":"");
 function renderMats(){
   const r=room(),sl=$("mat");sl.innerHTML="";
   const mo=(v,t)=>{const o=document.createElement("option");o.value=v;o.textContent=t;sl.appendChild(o);};
   mo("","— kein Material (m² pro Paket manuell)");
-  db.materials.forEach(m=>mo(m.id,m.name+" ("+f(m.l)+" × "+f(m.b)+" m)"));
+  db.materials.forEach(m=>mo(m.id,m.name+" ("+f(m.l*1000,0)+" × "+f(m.b*1000,0)+" mm)"));
   sl.value=lead(r).mat||"";$("paket").disabled=!!lead(r).mat;
   const cur=matOf(lead(r));
   $("matInfo").textContent=cur?matLine(cur)+(cur.aufbau?"\nAufbau: "+cur.aufbau:""):"";
@@ -1363,7 +1364,7 @@ $("addSub").onclick=()=>{
 };
 $("mat").onchange=()=>{lead(room()).mat=$("mat").value;$("paket").disabled=!!lead(room()).mat;renderMats();renderCalc();persist();};
 $("mAdd").onclick=()=>{
-  const n=$("mName").value.trim(),l=parseFloat($("mL").value),b=parseFloat($("mB").value);
+  const n=$("mName").value.trim(),l=parseFloat($("mL").value)/1000,b=parseFloat($("mB").value)/1000;
   if(!n||!(l>0)||!(b>0)){$("saveStatus").textContent="Bitte Name, Länge und Breite eingeben.";return;}
   db.materials.push({id:uid(),name:n,kind:$("mKind").value,l,b,d:parseFloat($("mD").value)||0,pack:parseInt($("mP").value)||0,aufbau:$("mAuf").value.trim()});
   ["mName","mL","mB","mD","mP","mAuf"].forEach(i=>$(i).value="");
@@ -1446,7 +1447,8 @@ async function saveProject(){
   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
   $("saveStatus").textContent="Projekt als Datei gespeichert: "+name;
 }
-const saveApp=()=>persist("Gespeichert in der App um "+new Date().toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})+" Uhr ✓");
+let toastT;const toast=t=>{const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toastT);toastT=setTimeout(()=>e.classList.remove("on"),2200);};
+const saveApp=()=>{persist("Gespeichert in der App um "+new Date().toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})+" Uhr ✓");toast($("saveStatus").textContent);};
 $("backup").onclick=saveProject;$("hSave").onclick=saveApp;$("saveProj").onclick=saveApp;$("hOpen").onclick=()=>$("drawer").classList.add("open");
 $("restoreBak").onclick=()=>{
   let n=0;
@@ -1515,5 +1517,6 @@ refreshAll();
 resizeCanvas();
 if("serviceWorker"in navigator&&(location.protocol==="https:"||location.hostname==="localhost")){window.addEventListener("load",()=>{navigator.serviceWorker.register("sw.js").catch(()=>{});});}
 </script>
+<div id="toast"></div>
 </body>
 </html>
