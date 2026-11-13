@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Trendfloor Bodenplan 026</title>
+<title>Trendfloor Bodenplan 027</title>
 <link rel="manifest" href="manifest.webmanifest">
 <meta name="theme-color" content="#0b2a5b">
 <meta name="mobile-web-app-capable" content="yes">
@@ -148,7 +148,7 @@ input,select{min-height:46px}
 <body>
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 026 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 027 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -162,7 +162,7 @@ input,select{min-height:46px}
 <p id="saveStatus" class="status"></p>
 
 <section id="splash" data-tab="h">
-  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 026</span></div>
+  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 027</span></div>
   <div class="sp-img"></div>
   <div class="sp-body">
     <h2 id="hello">Guten Tag!</h2>
@@ -173,7 +173,7 @@ input,select{min-height:46px}
 </section>
 <section id="overview" data-tab="u">
   <div class="card proj"><span class="plbl">📁 Aktuelles Projekt</span><div class="pname" id="hName"></div><div class="psub" id="hSub"></div><button id="hNew" class="wide">＋ Baustelle wechseln / neu anlegen</button>
-  <div class="row"><button id="hSave" class="primary">💾 Projekt speichern</button><button id="hOpen">📂 Projekt öffnen</button></div></div>
+  <div class="row"><button id="hSave" class="primary">💾 Speichern</button><button id="hOpen">📂 Baustelle öffnen</button></div></div>
   <div class="tiles">
     <button class="tile" data-go="w|chips"><i>🚪</i><b>Räume</b><small>Räume verwalten</small></button>
     <button class="tile" data-go="w|planCard"><i>📐</i><b>Bodenplan</b><small>Plan zeichnen &amp; bearbeiten</small></button>
@@ -182,7 +182,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 026</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 027</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -216,7 +216,7 @@ input,select{min-height:46px}
   <div class="zoom"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢ Anpassen</button><span id="zoomLbl" class="hint"></span></div>
   <div class="zoom"><button id="pL">◀</button><button id="pU">▲</button><button id="pD">▼</button><button id="pR">▶</button></div>
   <label class="chk"><input type="checkbox" id="showAll" checked> Ganze Wohnung zeigen (mit Maßen)</label>
-  <div class="row"><button id="saveProj" class="primary wide">💾 Projekt speichern (Datei)</button></div>
+  <div class="row"><button id="saveProj" class="primary wide">💾 Speichern</button></div>
   <div class="row"><button id="savePlan" class="wide">🖼 Plan als Bild speichern</button></div>
   <p class="hint">Der Plan wird automatisch auf dem Gerät gespeichert. „Plan als Bild“ legt die ganze Wohnung als PNG ab (Teilen/Galerie/Downloads).</p>
 </section>
@@ -311,8 +311,8 @@ input,select{min-height:46px}
     <label>Gespeicherte Baustellen<select id="projects"></select></label>
     <button id="newProject" class="primary">+ Neue Baustelle</button>
     <h3>Sicherung</h3>
-    <button id="backup">Projekt speichern (Datei)</button>
-    <button id="import">Sicherung importieren</button>
+    <button id="backup">Sicherung als Datei speichern</button>
+    <button id="import">Sicherung aus Datei laden</button>
     <button id="restoreBak">Frühere Stände wiederherstellen</button>
     <input type="file" id="file" accept=".json" hidden>
     <p class="hint">Alles wird automatisch auf diesem Gerät gespeichert. Für Gerätewechsel oder Sicherheit die Sicherung exportieren.</p>
@@ -387,7 +387,7 @@ function persist(msg){
     db.projects[key]=proj;savedKey=key;db.last=key;
     localStorage.setItem(KEY,JSON.stringify(db));
     fillSelect();projLabel();
-    $("saveStatus").textContent=msg||"Automatisch gespeichert.";
+    $("saveStatus").textContent=msg||"Automatisch gespeichert · "+new Date().toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})+" Uhr";
   }catch(e){$("saveStatus").textContent="Speichern fehlgeschlagen: "+e.message;}
 }
 
@@ -1340,7 +1340,7 @@ $("stagger").oninput=()=>{const v=parseFloat($("stagger").value);lead(room()).st
 const closeDrawer=()=>$("drawer").classList.remove("open");
 $("menuBtn").onclick=()=>$("drawer").classList.add("open");
 $("drawerClose").onclick=closeDrawer;$("drawerBk").onclick=closeDrawer;
-$("topExport").onclick=()=>$("backup").click();
+$("topExport").onclick=()=>saveApp();
 $("projects").addEventListener("change",closeDrawer);
 $("newProject").addEventListener("click",()=>setTimeout(closeDrawer,0));
 $("tDoor2").onclick=()=>setTool("door2");
@@ -1446,7 +1446,8 @@ async function saveProject(){
   const url=URL.createObjectURL(blob),a=document.createElement("a");a.href=url;a.download=name;a.click();URL.revokeObjectURL(url);
   $("saveStatus").textContent="Projekt als Datei gespeichert: "+name;
 }
-$("backup").onclick=saveProject;$("hSave").onclick=saveProject;$("saveProj").onclick=saveProject;$("hOpen").onclick=()=>$("file").click();
+const saveApp=()=>persist("Gespeichert in der App um "+new Date().toLocaleTimeString("de-AT",{hour:"2-digit",minute:"2-digit"})+" Uhr ✓");
+$("backup").onclick=saveProject;$("hSave").onclick=saveApp;$("saveProj").onclick=saveApp;$("hOpen").onclick=()=>$("drawer").classList.add("open");
 $("restoreBak").onclick=()=>{
   let n=0;
   ["_bak1","_bak2"].forEach((sx,i)=>{try{
