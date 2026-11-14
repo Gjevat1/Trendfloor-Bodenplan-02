@@ -184,7 +184,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 033</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 036</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -681,7 +681,7 @@ function getPoint(e){
 }
 
 const HINTS={
-  wall:"Tippe die Ecken des Raums nacheinander an. Die Wände rasten waagrecht und senkrecht ein. Zum Schließen den roten Startpunkt antippen. Danach unten die echten Wandlängen eintippen. Ganze Wohnung: Ist ein Raum geschlossen, tippst du NEBEN den Raum – dann beginnt automatisch der nächste Raum (rastet an den Nachbarwänden ein). Auf eine Wand oder in den Raum tippen = Innenwand beginnen. Auf einen anderen Raum tippen = dorthin wechseln.",
+  wall:"Tippe die Ecken des Raums nacheinander an. Die Wände rasten waagrecht und senkrecht ein. Zum Schließen den roten Startpunkt antippen. Liegen der Startpunkt und der letzte Punkt auf derselben Wand eines Nachbarraums, schließt der Raum von selbst und übernimmt diese Wand. Danach unten die echten Wandlängen eintippen. Ganze Wohnung: Ist ein Raum geschlossen, tippst du NEBEN den Raum – dann beginnt automatisch der nächste Raum (rastet an den Nachbarwänden ein). Auf eine Wand oder in den Raum tippen = Innenwand beginnen. Auf einen anderen Raum tippen = dorthin wechseln.",
   edit:"Ecke ziehen verschiebt sie. Tür oder Fenster antippen und entlang der Wand ziehen; der Button löscht sie. Wand antippen: teilen oder löschen. Auf einen anderen Raum tippen wechselt dorthin. „Zurück“ macht den letzten Schritt rückgängig.",
   split:"Zwischenwand: Tippe zuerst eine Wand an (Start). Dann beliebig viele Punkte im Raum antippen – für Ecken, z. B. beim Bad – und zum Schluss die Gegenwand antippen.",
   view:"Tippe auf einen Raum, um ihn zu wählen.",
@@ -927,6 +927,28 @@ function syncLinks(r){
     });
   });
 }
+function mergeDoors(){
+  const T=["door","door2","gap"],all=()=>proj.rooms.filter(c=>c.closed);let cnt=0;
+  all().forEach(syncLinks);
+  all().forEach(r=>{
+    const ops=r.openings.filter(o=>T.includes(o.type)),rm=[];
+    ops.forEach((a,i)=>{if(rm.includes(a))return;const qa=openRect(r,a);if(!qa)return;
+      ops.forEach((b,j)=>{if(j<=i||rm.includes(b))return;const qb=openRect(r,b);if(!qb||qb.i!==qa.i)return;
+        if(Math.min(qa.s+qa.w,qb.s+qb.w)-Math.max(qa.s,qb.s)>0.5*Math.min(qa.w,qb.w))rm.push(b);});});
+    rm.forEach(b=>{unlink(b);r.openings=r.openings.filter(x=>x!==b);cnt++;});
+  });
+  all().forEach(syncLinks);
+  return cnt;
+}
+function adoptWalls(r){
+  const n=r.pts.length;
+  for(let i=0;i<n;i++){const A=r.pts[i],B=r.pts[(i+1)%n],l=Math.hypot(B.x-A.x,B.y-A.y);if(l<0.05)continue;
+    const ux=(B.x-A.x)/l,uy=(B.y-A.y)/l,mx=(A.x+B.x)/2,my=(A.y+B.y)/2;
+    proj.rooms.forEach(c=>{if(c===r||!c.closed)return;const m=c.pts.length;
+      for(let k=0;k<m;k++){const C=c.pts[k],D=c.pts[(k+1)%m],cl=Math.hypot(D.x-C.x,D.y-C.y);if(cl<0.05)continue;
+        const cx=(D.x-C.x)/cl,cy=(D.y-C.y)/cl,d=Math.abs((mx-C.x)*cy-(my-C.y)*cx),u=(mx-C.x)*cx+(my-C.y)*cy;
+        if(d<=0.4&&u>=0&&u<=cl&&Math.abs(ux*cy-uy*cx)<0.1){if(!(A.wt>0)&&C.wt>0)A.wt=C.wt;if(!A.wk&&C.wk)A.wk=C.wk;}}});}
+}
 function roomAt(raw){
   const r=room();
   return proj.rooms.filter(c=>c!==r&&c.closed&&(showAll||(c.grp&&c.grp===r.grp)||c.parent===r.id||c.id===r.parent)&&inPoly(raw.x/ppm,raw.y/ppm,c.pts)).sort((a,b)=>gross(a)-gross(b))[0]||null;
@@ -980,7 +1002,7 @@ function renderEdit(){
   const add=(t,fn,cls)=>{const b=document.createElement("button");b.textContent=t;if(cls)b.className=cls;b.onclick=fn;bar.appendChild(b);};
   if(tool==="split"){if(pend&&pend.pts.length)add("Teilwand hier beenden",finishStub);return;}
   if(tool!=="edit")return;
-  if(!sel||!selValid()){add("⟂ Alle Wände geradeziehen",straightenAll);return;}
+  if(!sel||!selValid()){add("⟂ Alle Wände geradeziehen",straightenAll);add("Doppelte Türen bereinigen",()=>{snap();const n=mergeDoors();changed();$("saveStatus").textContent=n?"Doppelte Türen bereinigt: "+n:"Keine doppelten Türen gefunden.";});return;}
   const i=sel.i;
   if(sel.t==="w"){add("an Nachbarwand ausrichten",()=>alignWall(i));add("waagrecht",()=>axisWall(i,true));add("senkrecht",()=>axisWall(i,false));add("Wand teilen",()=>splitWall(i));add("Wand löschen",()=>deleteWall(i),"danger");}
   else if(sel.t==="s"){add("Teilwand löschen",()=>{snap();room().stubs.splice(i,1);sel=null;changed();},"danger");}
@@ -1268,7 +1290,7 @@ canvas.addEventListener("pointerdown",e=>{
     r=nr;pts=r.pts;created=true;
   }
   if(pts.length>=3&&Math.hypot(raw.x-pts[0].x*ppm,raw.y-pts[0].y*ppm)<32){
-    snap();r.closed=true;changed();return;
+    snap();r.closed=true;adoptWalls(r);mergeDoors();changed();return;
   }
   let x=raw.x/ppm,y=raw.y/ppm;
   if(pts.length){
@@ -1297,8 +1319,15 @@ canvas.addEventListener("pointerdown",e=>{
     const l=pts[pts.length-1];
     if(Math.hypot(x-l.x,y-l.y)<0.05)return;
   }
+  let share=false;
+  if(pts.length>=2){
+    const seg=(px,py,A,B)=>{const dx=B.x-A.x,dy=B.y-A.y,l2=dx*dx+dy*dy;if(l2<1e-6)return false;const t=((px-A.x)*dx+(py-A.y)*dy)/l2;return t>=-0.001&&t<=1.001&&Math.hypot(px-(A.x+t*dx),py-(A.y+t*dy))<0.02;};
+    const l=pts[pts.length-1],f0=pts[0];
+    share=proj.rooms.some(c=>{if(c===r||!c.closed||!(showAll||c.id===r.parent))return false;const m=c.pts.length;for(let k=0;k<m;k++){const A=c.pts[k],B=c.pts[(k+1)%m];if(seg(x,y,A,B)&&seg(f0.x,f0.y,A,B)&&!seg(l.x,l.y,A,B))return true;}return false;});
+  }
   if(!created)snap();
   pts.push({x,y});
+  if(share){r.closed=true;adoptWalls(r);mergeDoors();}
   changed();
 });
 
@@ -1333,7 +1362,7 @@ canvas.addEventListener("pointercancel",endDrag);
 $("close").onclick=()=>{
   const r=room();
   if(r.pts.length<3){$("saveStatus").textContent="Bitte zuerst mindestens drei Ecken setzen.";return;}
-  snap();r.closed=true;changed();
+  snap();r.closed=true;adoptWalls(r);mergeDoors();changed();
 };
 $("clear").onclick=()=>{
   if(!confirm("Zeichnung dieses Raums wirklich löschen?"))return;
@@ -1386,7 +1415,7 @@ $("mAdd").onclick=()=>{
   persist("Material gespeichert.");renderMats();$("newMat").open=false;
 };
 const bG=()=>{db.bahn=db.bahn||{W:5,L:22,Z:5,dir:"y",st:"lo"};const g=db.bahn;g.rd=g.rd||{};g.sm=g.sm||{};return g;};
-let bTap=null,bView=null;
+let bTap=null,bView=null,bOpen={};
 function bInit(){const g=bG();$("bW").value=g.W;$("bL").value=g.L;$("bZ").value=g.Z;$("bD").value=g.dir;$("bS").value=g.st;}
 function bahnCalc(){
   const g=bG(),W=g.W,z=g.Z/100;
@@ -1437,6 +1466,7 @@ function bRender(){
   const xs=[],ys=[];proj.rooms.filter(r=>r.closed).forEach(r=>r.pts.forEach(p=>{xs.push(p.x);ys.push(p.y);}));
   const x0=Math.min(...xs)-.3,y0=Math.min(...ys)-.3,bw=Math.max(...xs)+.3-x0,bh=Math.max(...ys)+.3-y0,sc=620/Math.max(bw,bh),F=v=>v.toFixed(1);
   bView={x0,y0,bw,bh};
+  const det=(k,t,h,d)=>`<details data-k="${k}"${(k in bOpen?bOpen[k]:d)?" open":""}><summary style="font-weight:700;padding:8px 0;cursor:pointer">${t}</summary>${h}</details>`;
   let s1=`<div style="overflow-x:auto"><svg data-plan="1" width="640" viewBox="0 0 ${F(bw*sc)} ${F(bh*sc)}" style="background:#fff;border:1px solid ${bTap!==null?"#d62828":"#d5dfeb"};border-radius:12px">`;
   proj.rooms.forEach(r=>{if(r.closed)s1+=`<polygon points="${r.pts.map(p=>F((p.x-x0)*sc)+","+F((p.y-y0)*sc)).join(" ")}" fill="#f1f5fb" stroke="#6b7f96" stroke-width="1.5"/>`;});
   R.P.forEach(p=>{const d=p.d,X=d?p.a[0]:p.l[0],Y=d?p.l[0]:p.a[0],w=d?p.a[1]-p.a[0]:p.l[1]-p.l[0],h=d?p.l[1]-p.l[0]:p.a[1]-p.a[0],cx=F((X+w/2-x0)*sc);
@@ -1462,9 +1492,10 @@ function bRender(){
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
   const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||"keine Naht";
     return `<div class="box"><b>${esc(i.r)}</b><br><label>Verlegerichtung<select data-bd="${ii}"><option value="y"${i.dir==="y"?" selected":""}>↑ senkrecht (^)</option><option value="x"${i.dir==="x"?" selected":""}>→ waagrecht (&gt;)</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
-  out.innerHTML=`<h3>Plan</h3><p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}<h3>Richtung &amp; Nähte je Raum</h3>${ctl}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}<h3>Zuschnittliste (Länge × Breite, inkl. Zugabe)</h3><p class="box">${list}</p><h3>Reststücke</h3><p class="box">${rlist}</p><p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`;
+  out.innerHTML=`${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
 }
 function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb des Raums.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.r]=cur;persist();bRender();}
+$("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
 $("bOut").onclick=e=>{
   const g=bG(),sv=e.target.closest("svg[data-plan]");
   if(sv&&bTap!==null&&bView){const I=bahnCalc().info[bTap];if(!I){bTap=null;bRender();return;}const rc=sv.getBoundingClientRect(),px=bView.x0+(e.clientX-rc.left)/rc.width*bView.bw,py=bView.y0+(e.clientY-rc.top)/rc.height*bView.bh;bTap=null;bAdd(I,Math.round((I.dir==="y"?px:py)*20)/20);return;}
