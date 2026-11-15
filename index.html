@@ -41,6 +41,10 @@ h3{font-size:1.05rem;margin:20px 0 8px}
 label{display:block;font-size:.88rem;font-weight:600;color:var(--mut);margin:12px 0 6px}
 input,select,textarea{font:inherit;width:100%;min-height:52px;padding:0 14px;border:1px solid var(--line);border-radius:14px;background:#fff;color:var(--ink)}
 textarea{padding:12px 14px;min-height:84px}
+#newMat label,#mats label{font-weight:700;font-size:1rem;margin-top:10px}
+#newMat input,#newMat select,#newMat textarea,#mats input,#mats select,#mats textarea{min-height:56px;font-size:1.15rem}
+#newMat .g2{grid-template-columns:1fr}
+#mPrev{font-weight:700}
 input[type=checkbox]{width:26px;min-height:26px;height:26px;margin:0;padding:0}
 .chk{display:flex;align-items:center;gap:12px;font-size:1rem;color:var(--ink);margin:14px 0 2px}
 .g2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
@@ -155,7 +159,7 @@ input,select{min-height:46px}
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Datei-Menü">☰</button>
   <button id="homeBtn" class="iconbtn" aria-label="Übersicht">🏠</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 041 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 042 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -290,12 +294,13 @@ input,select{min-height:46px}
     <label>Name<input id="mName" placeholder="z. B. V100 Spanplatte"></label>
     <label>Typ<select id="mKind"></select></label>
     <div class="g2">
-      <label>Länge (mm)<input id="mL" type="number" step="1" inputmode="numeric" placeholder="z. B. 2050"></label>
-      <label>Breite (mm)<input id="mB" type="number" step="1" inputmode="numeric" placeholder="z. B. 940"></label>
+      <label>Länge (mm) – lange Seite<input id="mL" type="number" step="1" inputmode="numeric" placeholder="z. B. 2050"></label>
+      <label>Breite (mm) – kurze Seite<input id="mB" type="number" step="1" inputmode="numeric" placeholder="z. B. 940"></label>
       <label>Dicke (mm)<input id="mD" type="number" step="0.1" inputmode="decimal"></label>
       <label>Stück/Paket<input id="mP" type="number" step="1" inputmode="numeric"></label>
     </div>
-    <label>Aufbau<textarea id="mAuf" rows="2" placeholder="z. B. Untergrund / V100 / Trittschall / Vinyl"></textarea></label>
+    <div id="mPrev" class="box" style="display:none"></div>
+    <label>Aufbau<textarea id="mAuf" rows="3" placeholder="z. B. Untergrund / V100 / Trittschall / Vinyl"></textarea></label>
     <div class="row"><button id="mAdd" class="primary">Speichern</button></div>
   </details>
   <p class="hint">Die Materialien gelten für alle Baustellen. Zum Bearbeiten „Ändern“ antippen. Lange Seite = Verlegerichtung.</p>
@@ -1238,23 +1243,26 @@ function renderMats(){
       d.append(t,i,eb);box.appendChild(d);return;
     }
     d.style.display="block";
+    const sm=document.createElement("div");sm.style.cssText="grid-column:1/-1;font-weight:700;margin:4px 0 8px";
+    const updSm=()=>{const c=matCheck(m.l*1000,m.b*1000,m.d||0);sm.innerHTML=c.t+(c.w.length?"<br>"+c.w.join("<br>"):"");};
     const ed=(lab,key,type)=>{
       const l=document.createElement("label"),i=document.createElement("input");
       l.style.cssText="display:block;width:auto;margin:0 0 6px";
-      i.type=type;if(type==="text")noCap(i);if(type==="number"){i.step=key==="pack"?"1":"0.01";i.min="0";i.setAttribute("inputmode","decimal");}
-      i.value=m[key]==null?"":m[key];
+      const mm=key==="l"||key==="b";
+      i.type=type;if(type==="text")noCap(i);if(type==="number"){i.step=(key==="pack"||mm)?"1":"0.1";i.min="0";i.setAttribute("inputmode",key==="pack"||mm?"numeric":"decimal");}
+      i.value=m[key]==null?"":(mm?Math.round(m[key]*1000):m[key]);
       i.onchange=()=>{
-        if(type==="number"){let v=parseFloat(i.value);if(!(v>0)&&key!=="pack"&&key!=="d"){i.value=m[key];return;}m[key]=key==="pack"?Math.round(v)||0:(v||0);}
+        if(type==="number"){let v=parseFloat(i.value);if(!(v>0)&&key!=="pack"&&key!=="d"){i.value=mm?Math.round(m[key]*1000):m[key];return;}m[key]=key==="pack"?Math.round(v)||0:mm?v/1000:(v||0);}
         else{const v=i.value.trim();if(!v){i.value=m[key];return;}m[key]=v;}
-        changed();
+        updSm();changed();
       };
       l.append(lab,i);return l;
     };
     const ks=document.createElement("select");
     fillKinds(ks,m.kind||"Sonstiges");ks.onchange=()=>{if(ks.value==="__new"){const k=newKind(ks,m.kind||"Sonstiges");if(k)m.kind=k;}else m.kind=ks.value;persist();};
     const lk=document.createElement("label");lk.style.cssText="display:block;width:auto;margin:0 0 6px";lk.append("Typ",ks);
-    const g=document.createElement("div");g.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:0 12px";
-    g.append(ed("Länge (m)","l","number"),ed("Breite (m)","b","number"),ed("Dicke (mm)","d","number"),ed("Stück/Paket","pack","number"));
+    const g=document.createElement("div");g.style.cssText="display:grid;grid-template-columns:1fr;gap:0";
+    g.append(ed("Länge (mm) – lange Seite","l","number"),ed("Breite (mm) – kurze Seite","b","number"),ed("Dicke (mm)","d","number"),ed("Stück/Paket","pack","number"),sm);updSm();
     const ta=document.createElement("textarea");noCap(ta);ta.value=m.aufbau||"";ta.rows=2;ta.placeholder="Aufbau (z. B. Untergrund / V100 / Trittschall / Vinyl)";
     ta.onchange=()=>{m.aufbau=ta.value;persist();};
     const la=document.createElement("label");la.style.cssText="display:block;width:auto;margin:0 0 6px";la.append("Aufbau",ta);
@@ -1447,11 +1455,22 @@ $("addSub").onclick=()=>{
 };
 $("mat").onchange=()=>{lead(room()).mat=$("mat").value;$("paket").disabled=!!lead(room()).mat;renderMats();renderCalc();persist();};
 ["mName","mAuf"].forEach(i=>noCap($(i)));
+function matCheck(l,b,d){
+  if(!(l>0)||!(b>0))return{t:"",w:[]};
+  const w=[];
+  if(l<20||b<20)w.push("⚠ Länge und Breite bitte in Millimetern eingeben (z. B. 2050).");
+  else{if(l<b)w.push("⚠ Die Länge ist kleiner als die Breite – vertauscht?");if(l>20000||b>5000)w.push("⚠ Sehr große Maße – bitte prüfen.");}
+  if(d>60)w.push("⚠ Dicke "+f(d,1)+" mm – stimmt das?");
+  return{t:f(l,0)+" × "+f(b,0)+" mm = "+f(l*b/1e6)+" m² je Stück",w};
+}
+const mUpd=()=>{const c=matCheck(parseFloat($("mL").value),parseFloat($("mB").value),parseFloat($("mD").value)||0),p=$("mPrev");p.style.display=c.t?"block":"none";p.innerHTML=c.t+(c.w.length?"<br>"+c.w.join("<br>"):"");};
+["mL","mB","mD"].forEach(i=>$(i).addEventListener("input",mUpd));
 $("mAdd").onclick=()=>{
   const n=$("mName").value.trim(),l=parseFloat($("mL").value)/1000,b=parseFloat($("mB").value)/1000;
   if(!n||!(l>0)||!(b>0)){$("saveStatus").textContent="Bitte Name, Länge und Breite eingeben.";return;}
+  {const c=matCheck(l*1000,b*1000,parseFloat($("mD").value)||0);if(c.w.length&&!confirm(c.w.join("\n")+"\n\nTrotzdem speichern?"))return;}
   db.materials.push({id:uid(),name:n,kind:$("mKind").value,l,b,d:parseFloat($("mD").value)||0,pack:parseInt($("mP").value)||0,aufbau:$("mAuf").value.trim()});
-  ["mName","mL","mB","mD","mP","mAuf"].forEach(i=>$(i).value="");
+  ["mName","mL","mB","mD","mP","mAuf"].forEach(i=>$(i).value="");mUpd();
   persist("Material gespeichert.");renderMats();$("newMat").open=false;
 };
 const bG=()=>{db.bahn=db.bahn||{W:5,L:22,Z:5,dir:"y",st:"lo"};const g=db.bahn;g.rd=g.rd||{};g.sm=g.sm||{};return g;};
