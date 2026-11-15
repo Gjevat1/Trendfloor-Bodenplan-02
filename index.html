@@ -26,9 +26,13 @@ button.primary,button.active{background:var(--blue);border-color:var(--blue);col
 button.danger{color:#b42318}
 .iconbtn{width:54px;padding:0;font-size:1.5rem}
 .topbtn{padding:0 14px;min-height:50px;font-size:.95rem}
-.tabbar{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:10px 12px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
-.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:64px;padding:6px 2px;font-size:.8rem;line-height:1.15;background:#eceef3;border-color:#eceef3}
-.tabbar button span{font-size:1.4rem}
+.tabbar{display:grid;grid-template-columns:repeat(5,1fr);gap:6px;padding:8px 8px;background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+.tabbar button{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-height:60px;padding:6px 1px;font-size:.72rem;line-height:1.15;background:#eceef3;border-color:#eceef3}
+.tabbar button span{font-size:1.3rem}
+.ribbon{display:flex;gap:8px;overflow-x:auto;padding:8px 10px;background:#f4f7fb;border-bottom:1px solid var(--line);position:sticky;top:76px;z-index:9;-webkit-overflow-scrolling:touch}
+.ribbon button{flex:0 0 auto;width:auto;min-height:44px;padding:0 14px;margin:0;font-size:.9rem;white-space:nowrap}
+.ribbon button.active{background:var(--blue);border-color:var(--blue);color:#fff}
+section,details.card{scroll-margin-top:140px}
 .tabbar button.active{background:var(--blue);border-color:var(--blue);color:#fff}
 main{max-width:760px;margin:0 auto;padding:14px 12px 60px}
 .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
@@ -54,6 +58,7 @@ canvas{display:block;width:100%;max-width:700px;aspect-ratio:1/1;margin:10px aut
 .info:empty,.status:empty,.box:empty{display:none}
 .box{background:var(--soft);border:1px solid #d8e3fb;border-radius:14px;padding:12px 14px;font-size:.95rem;color:#2c3e66;margin:10px 0}
 .status{font-size:.88rem;color:var(--mut);margin:0 0 10px;padding:0 4px}
+body.nohint .hint:not(#zoomLbl),body.nohint #toolHint{display:none}
 .hint{font-size:.9rem;color:var(--mut);line-height:1.5;margin:8px 0}
 .more{margin-top:6px}
 .more summary{min-height:52px;display:flex;align-items:center;font-weight:600;color:var(--blued);cursor:pointer}
@@ -148,18 +153,19 @@ input,select{min-height:46px}
 </head>
 <body>
 <header class="top">
-  <button id="menuBtn" class="iconbtn" aria-label="Menü">☰</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 032 · <span id="projLbl"></span></div></div>
+  <button id="menuBtn" class="iconbtn" aria-label="Datei-Menü">☰</button>
+  <button id="homeBtn" class="iconbtn" aria-label="Übersicht">🏠</button>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 041 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
-  <button data-t="u"><span>🏠</span>Übersicht</button>
   <button data-t="w"><span>📐</span>Wände</button>
   <button data-t="o"><span>🚪</span>Türen &amp; Fenster</button>
   <button data-t="m"><span>📦</span>Material</button>
   <button data-t="b"><span>🧵</span>Bahnen</button>
   <button data-t="a"><span>📊</span>Auswertung</button>
 </div>
+<div id="ribbon" class="ribbon" style="display:none"></div>
 <main>
 <p id="saveStatus" class="status"></p>
 
@@ -184,7 +190,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 036</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version 038</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -215,7 +221,7 @@ input,select{min-height:46px}
   <div class="g3"><button id="undo">↶ Zurück</button><button id="close">Raum schließen</button><button id="clear" class="danger">Neu zeichnen</button></div>
   <canvas id="plan"></canvas>
   <p id="toolHint" class="info"></p>
-  <div class="zoom"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢ Anpassen</button><span id="zoomLbl" class="hint"></span></div>
+  <div class="zoom"><button id="zOut">−</button><button id="zIn">+</button><button id="zFit">⤢ Anpassen</button><button id="hintBtn">ℹ Hinweise</button><span id="zoomLbl" class="hint"></span></div>
   <div class="zoom"><button id="pL">◀</button><button id="pU">▲</button><button id="pD">▼</button><button id="pR">▶</button></div>
   <label class="chk"><input type="checkbox" id="showAll" checked> Ganze Wohnung zeigen (mit Maßen)</label>
   <div class="row"><button id="saveProj" class="primary wide">💾 Speichern</button></div>
@@ -226,7 +232,7 @@ input,select{min-height:46px}
 <section class="card" data-tab="w">
   <h2>Wände</h2>
   <div class="g2">
-    <label>Stärke neue Zwischen-/Teilwand<select id="nwT"><option value="0">ohne (Linie)</option><option value="0.12" selected>12 cm</option><option value="0.15">15 cm</option><option value="0.175">17,5 cm</option><option value="0.2">20 cm</option><option value="0.25">25 cm</option><option value="0.3">30 cm</option><option value="0.38">38 cm</option><option value="0.5">50 cm</option></select></label>
+    <label>Stärke neue Zwischen-/Teilwand<select id="nwT"><option value="0" selected>ohne (Linie)</option><option value="0.12">12 cm</option><option value="0.15">15 cm</option><option value="0.175">17,5 cm</option><option value="0.2">20 cm</option><option value="0.25">25 cm</option><option value="0.3">30 cm</option><option value="0.38">38 cm</option><option value="0.5">50 cm</option></select></label>
     <label>Gewählte Wand: Typ<select id="wKind"><option value="">—</option><option value="aussen">Außenwand</option><option value="innen">Innenwand</option></select></label>
   </div>
   <label>Gewählte Wand: Stärke<select id="wThick"><option value="">—</option><option value="0.12">12 cm</option><option value="0.15">15 cm</option><option value="0.175">17,5 cm</option><option value="0.2">20 cm</option><option value="0.25">25 cm</option><option value="0.3">30 cm</option><option value="0.38">38 cm</option><option value="0.5">50 cm</option></select></label>
@@ -236,7 +242,7 @@ input,select{min-height:46px}
   <p class="hint">Ändert sich eine Wand, verschieben sich die folgenden Ecken. Die Schlusswand rechnet sich daraus selbst – stimmt sie nicht mit deinem Aufmaß überein, hast du ein Maß falsch.</p>
 </section>
 
-<section class="card" data-tab="b">
+<section id="bCard" class="card" data-tab="b">
   <h2>Bahnen &amp; Zuschnitt</h2>
   <p class="hint">Berücksichtigt Räume mit Belag „Teppich“ (sonst alle Räume).</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
@@ -245,7 +251,8 @@ input,select{min-height:46px}
     <label>Zugabe je Seite (cm)<input id="bZ" type="number" step="1" inputmode="numeric"></label>
     <label>Standard-Verlegerichtung<select id="bD"><option value="y">↑ senkrecht (^)</option><option value="x">→ waagrecht (&gt;)</option></select></label>
   </div>
-  <label>Nahtvorschlag beginnt<select id="bS"><option value="lo">links / oben</option><option value="hi">rechts / unten</option></select></label>
+  <label>Sockelstreifen Breite (cm)<input id="bH" type="number" min="1" step="0.5" inputmode="decimal"></label>
+    <label>Nahtvorschlag beginnt<select id="bS"><option value="lo">links / oben</option><option value="hi">rechts / unten</option></select></label>
   <div id="bOut"></div>
 </section>
 
@@ -320,15 +327,18 @@ input,select{min-height:46px}
 <div id="drawer" class="drawer">
   <div id="drawerBk" class="bk"></div>
   <aside class="dpanel">
-    <div class="dhead"><h2>Menü</h2><button id="drawerClose" class="iconbtn" aria-label="Schließen">✕</button></div>
+    <div class="dhead"><h2>Datei</h2><button id="drawerClose" class="iconbtn" aria-label="Schließen">✕</button></div>
     <h3>Baustelle</h3>
     <label>Name<input id="project" placeholder="Baustellenname"></label>
     <label>Gespeicherte Baustellen<select id="projects"></select></label>
     <button id="newProject" class="primary">+ Neue Baustelle</button>
+    <h3>Anzeige</h3>
+    <button id="hintBtn2">ℹ Hinweise ausblenden</button>
     <h3>Sicherung</h3>
     <button id="backup">Sicherung als Datei speichern</button>
     <button id="import">Sicherung aus Datei laden</button>
     <button id="restoreBak">Frühere Stände wiederherstellen</button>
+    <button id="mergeStands">Doppelte Stände aufräumen</button>
     <input type="file" id="file" accept=".json" hidden>
     <p class="hint">Alles wird automatisch auf diesem Gerät gespeichert. Für Gerätewechsel oder Sicherheit die Sicherung exportieren.</p>
   </aside>
@@ -663,6 +673,7 @@ function draw(){
       const m=c.pts.length;
       for(let i=0;i<m;i++){
         const a=c.pts[i],b=c.pts[(i+1)%m],t=f(Math.hypot(b.x-a.x,b.y-a.y)),mx=(a.x+b.x)/2*ppm,my=(a.y+b.y)/2*ppm;
+        {const la=Math.hypot(b.x-a.x,b.y-a.y);if(la>0.05&&r.pts.some((A,j)=>{const B=r.pts[(j+1)%r.pts.length],lb=Math.hypot(B.x-A.x,B.y-A.y);return lb>0.05&&Math.abs(la-lb)<0.02&&Math.hypot((a.x+b.x-A.x-B.x)/2,(a.y+b.y-A.y-B.y)/2)<0.3&&Math.abs((b.x-a.x)*(B.y-A.y)-(b.y-a.y)*(B.x-A.x))/(la*lb)<0.05;}))continue;}
         ctx.lineWidth=6;ctx.strokeStyle="#fff";ctx.strokeText(t,mx,my);ctx.fillStyle="#203047";ctx.fillText(t,mx,my);
       }
     });
@@ -697,6 +708,31 @@ function renderHome(){
 document.querySelectorAll(".tile").forEach(b=>{b.onclick=()=>{const[t,id]=b.dataset.go.split("|");setTab(t);const e=$(id);if(e){if(e.tagName==="DETAILS")e.open=true;setTimeout(()=>e.scrollIntoView({behavior:"smooth",block:"start"}),60);}};});
 $("hNew").onclick=()=>$("drawer").classList.add("open");
 $("goMenu").onclick=()=>setTab("u");document.querySelector(".ttl").onclick=()=>setTab("h");
+const mergeBtn=()=>{snap();const n=mergeDoors();changed();$("saveStatus").textContent=n?"Doppelte Türen bereinigt: "+n:"Keine doppelten Türen gefunden.";};
+const ribGo=e=>{if(!e)return;if(e.tagName==="DETAILS")e.open=true;e.scrollIntoView({behavior:"smooth",block:"start"});};
+const RIB={w:[["✎ Wand","t:tWall"],["✥ Bearbeiten","t:tEdit"],["Zwischenwand","t:tSplit"],["⟂ Geradeziehen",()=>straightenAll()]],
+o:[["Tür","t:tDoor"],["Doppeltür","t:tDoor2"],["Fenster","t:tWindow"],["Balkontür","t:tBalcony"],["Durchgang","t:tGap"],["Doppelte Türen bereinigen",mergeBtn]],
+m:[["Belag","g:fBelag"],["Materialdatenbank","g:fMat"],["Neues Material","g:newMat"]],
+b:[["Einstellungen","g:bCard"],["Nähte","d:naht"],["Zuschnittliste","d:liste"],["Reststücke","d:rest"],["Sockel aus Resten","d:sock"]],
+a:[["Ergebnis","g:fRes"],["Baustelle gesamt","g:fSum"]]};
+function ribSync(){document.querySelectorAll("#ribbon button[data-tid]").forEach(b=>b.classList.toggle("active",$(b.dataset.tid).classList.contains("active")));}
+function ribBuild(t){
+  const rb=$("ribbon"),items=RIB[t];rb.innerHTML="";
+  if(!items){rb.style.display="none";return;}
+  rb.style.display="flex";rb.style.top=$("tabs").offsetHeight+"px";
+  items.forEach(([lab,act])=>{const b=document.createElement("button");b.textContent=lab;
+    if(typeof act==="string"&&act[0]==="t")b.dataset.tid=act.slice(2);
+    b.onclick=()=>{if(typeof act==="function")act();else{const v=act.slice(2);if(act[0]==="t")$(v).click();else if(act[0]==="g")ribGo($(v));else{bOpen[v]=true;ribGo(document.querySelector('#bOut details[data-k="'+v+'"]'));}}setTimeout(ribSync,0);};
+    rb.appendChild(b);});
+  ribSync();
+}
+function hintApply(){const off=!!db.nohint;document.body.classList.toggle("nohint",off);$("hintBtn").textContent=off?"ℹ Hinweise an":"ℹ Hinweise aus";$("hintBtn2").textContent=off?"ℹ Hinweise einblenden":"ℹ Hinweise ausblenden";}
+const hintToggle=()=>{db.nohint=!db.nohint;hintApply();persist();};
+$("hintBtn").onclick=hintToggle;$("hintBtn2").onclick=hintToggle;
+$("homeBtn").onclick=()=>setTab("u");
+$("tWall").parentElement.style.display="none";
+new MutationObserver(ribSync).observe($("tWall").parentElement,{subtree:true,attributes:true,attributeFilter:["class"]});
+window.addEventListener("resize",()=>{$("ribbon").style.top=$("tabs").offsetHeight+"px";});
 function setTab(t){
   tab=t;
   if(t==="b"){bInit();bRender();}
@@ -706,6 +742,7 @@ function setTab(t){
   if(ts){if(!ts.includes(tool))setTool(ts[0]);}else setTool("view");
   document.body.classList.toggle("home",t==="h");document.body.classList.toggle("menu",t==="u");
   if(t==="h"||t==="u"){renderHome();window.scrollTo(0,0);}else{resizeCanvas();window.scrollTo(0,0);}
+  ribBuild(t);
 }
 function fillSize(){
   const box=$("oSizeBox");
@@ -1175,6 +1212,9 @@ function doSplit(r,i,PA,j,PB,ins){
   $("toolHint").textContent="Raum geteilt in „"+r.name+"“ und „"+r2.name+"“. Türen setzt du jetzt mit dem Werkzeug „Tür“.";
 }
 const KINDS=["V100 Spanplatte","Vinylboden","Parkett","Dielen","Fliese","Sonstiges"];
+function fillKinds(sel,val){sel.innerHTML="";const all=[...KINDS.slice(0,-1),...(db.kinds||[]),"Sonstiges"];all.forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;sel.appendChild(o);});const o=document.createElement("option");o.value="__new";o.textContent="＋ Neuer Typ …";sel.appendChild(o);sel.value=all.includes(val)?val:"Sonstiges";}
+function newKind(sel,prev){const n=(prompt("Name des neuen Typs (z. B. Teppich)")||"").trim();if(!n){fillKinds(sel,prev);return null;}db.kinds=db.kinds||[];let k=[...KINDS,...db.kinds].find(x=>x.toLowerCase()===n.toLowerCase());if(!k){k=n;db.kinds.push(n);persist();}fillKinds(sel,k);return k;}
+const noCap=e=>{e.setAttribute("autocapitalize","none");e.setAttribute("autocorrect","off");e.spellcheck=false;};
 let matEdit=null;
 const matLine=m=>(m.kind||"Material")+" · "+f(m.l*1000,0)+" × "+f(m.b*1000,0)+" mm"+(m.d>0?" · "+f(m.d,1)+" mm":"")+(m.pack>0?" · "+m.pack+" Stk/Paket":"");
 function renderMats(){
@@ -1185,7 +1225,7 @@ function renderMats(){
   sl.value=lead(r).mat||"";$("paket").disabled=!!lead(r).mat;
   const cur=matOf(lead(r));
   $("matInfo").textContent=cur?matLine(cur)+(cur.aufbau?"\nAufbau: "+cur.aufbau:""):"";
-  const mk=$("mKind");if(!mk.children.length)KINDS.forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;mk.appendChild(o);});
+  const mk=$("mKind");fillKinds(mk,mk.value||"V100 Spanplatte");mk.onchange=()=>{if(mk.value==="__new")newKind(mk,"Sonstiges");};
   const box=$("mats");box.innerHTML="";
   if(!db.materials.length){box.innerHTML='<p class="hint">Noch kein Material angelegt.</p>';return;}
   db.materials.forEach(m=>{
@@ -1201,22 +1241,21 @@ function renderMats(){
     const ed=(lab,key,type)=>{
       const l=document.createElement("label"),i=document.createElement("input");
       l.style.cssText="display:block;width:auto;margin:0 0 6px";
-      i.type=type;if(type==="number"){i.step=key==="pack"?"1":"0.01";i.min="0";i.setAttribute("inputmode","decimal");}
+      i.type=type;if(type==="text")noCap(i);if(type==="number"){i.step=key==="pack"?"1":"0.01";i.min="0";i.setAttribute("inputmode","decimal");}
       i.value=m[key]==null?"":m[key];
       i.onchange=()=>{
         if(type==="number"){let v=parseFloat(i.value);if(!(v>0)&&key!=="pack"&&key!=="d"){i.value=m[key];return;}m[key]=key==="pack"?Math.round(v)||0:(v||0);}
         else{const v=i.value.trim();if(!v){i.value=m[key];return;}m[key]=v;}
-        changed();renderMats();
+        changed();
       };
       l.append(lab,i);return l;
     };
     const ks=document.createElement("select");
-    KINDS.forEach(k=>{const o=document.createElement("option");o.value=k;o.textContent=k;ks.appendChild(o);});
-    ks.value=m.kind||"Sonstiges";ks.onchange=()=>{m.kind=ks.value;persist();};
+    fillKinds(ks,m.kind||"Sonstiges");ks.onchange=()=>{if(ks.value==="__new"){const k=newKind(ks,m.kind||"Sonstiges");if(k)m.kind=k;}else m.kind=ks.value;persist();};
     const lk=document.createElement("label");lk.style.cssText="display:block;width:auto;margin:0 0 6px";lk.append("Typ",ks);
     const g=document.createElement("div");g.style.cssText="display:grid;grid-template-columns:1fr 1fr;gap:0 12px";
     g.append(ed("Länge (m)","l","number"),ed("Breite (m)","b","number"),ed("Dicke (mm)","d","number"),ed("Stück/Paket","pack","number"));
-    const ta=document.createElement("textarea");ta.value=m.aufbau||"";ta.rows=2;ta.placeholder="Aufbau (z. B. Untergrund / V100 / Trittschall / Vinyl)";
+    const ta=document.createElement("textarea");noCap(ta);ta.value=m.aufbau||"";ta.rows=2;ta.placeholder="Aufbau (z. B. Untergrund / V100 / Trittschall / Vinyl)";
     ta.onchange=()=>{m.aufbau=ta.value;persist();};
     const la=document.createElement("label");la.style.cssText="display:block;width:auto;margin:0 0 6px";la.append("Aufbau",ta);
     const done=document.createElement("button");done.textContent="Fertig";done.className="primary";done.onclick=()=>{matEdit=null;changed();renderMats();};
@@ -1407,6 +1446,7 @@ $("addSub").onclick=()=>{
   $("toolHint").textContent="Teilbereich angelegt: Zeichne die Ecken des Bads innerhalb des Raums (der graue Umriss ist der Hauptraum). Seine Fläche wird vom Hauptraum abgezogen.";
 };
 $("mat").onchange=()=>{lead(room()).mat=$("mat").value;$("paket").disabled=!!lead(room()).mat;renderMats();renderCalc();persist();};
+["mName","mAuf"].forEach(i=>noCap($(i)));
 $("mAdd").onclick=()=>{
   const n=$("mName").value.trim(),l=parseFloat($("mL").value)/1000,b=parseFloat($("mB").value)/1000;
   if(!n||!(l>0)||!(b>0)){$("saveStatus").textContent="Bitte Name, Länge und Breite eingeben.";return;}
@@ -1415,12 +1455,13 @@ $("mAdd").onclick=()=>{
   persist("Material gespeichert.");renderMats();$("newMat").open=false;
 };
 const bG=()=>{db.bahn=db.bahn||{W:5,L:22,Z:5,dir:"y",st:"lo"};const g=db.bahn;g.rd=g.rd||{};g.sm=g.sm||{};return g;};
-let bTap=null,bView=null,bOpen={};
-function bInit(){const g=bG();$("bW").value=g.W;$("bL").value=g.L;$("bZ").value=g.Z;$("bD").value=g.dir;$("bS").value=g.st;}
+let bTap=null,bView=null,bOpen={},bZoom=1;
+function bInit(){const g=bG();$("bW").value=g.W;$("bL").value=g.L;$("bZ").value=g.Z;$("bD").value=g.dir;$("bS").value=g.st;$("bH").value=g.sh||10;}
 function bahnCalc(){
   const g=bG(),W=g.W,z=g.Z/100;
-  let rooms=proj.rooms.filter(r=>r.closed&&r.pts.length>2);
-  const tp=rooms.filter(r=>/teppich/i.test(r.belag||""));if(tp.length)rooms=tp;
+  g.off=g.off||{};
+  const all=proj.rooms.filter(r=>r.closed&&r.pts.length>2&&!r.parent);
+  let rooms=g.view?all.filter(r=>r.name===g.view):all.filter(r=>!g.off[r.name]);
   const P=[],info=[];let N=0;
   rooms.forEach(r=>{
     const dir=g.rd[r.name]||g.dir,A=p=>dir==="y"?p.x:p.y,Lg=p=>dir==="y"?p.y:p.x;
@@ -1451,23 +1492,29 @@ function bahnCalc(){
       ex.forEach(e=>{if(e.c1>c0&&e.c0<c1){if(e.sd>0)hi+=e.t;else lo-=e.t;}});
       N++;P.push({n:N,r:r.name,k:k+1,nb,d:dir==="y",w:s1-s0,L:hi-lo+2*z,a:[s0,s1],l:[lo-z,hi+z],over:s1-s0>W+1e-6});
     }
-    info.push({r:r.name,dir,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2});
+    info.push({r:r.name,dir,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2,sock:stats(r).sock});
   });
   const rows=[];
   [...P].sort((a,b)=>b.L-a.L).forEach(p=>{let row=rows.find(r=>r.free>=p.w-1e-9&&r.len>=p.L-1e-9);if(!row){row={len:p.L,free:W,items:[]};rows.push(row);}row.free-=p.w;row.items.push(p);});
   let rn=0;const O=[];
   rows.forEach(row=>{row.items.forEach(p=>{const l=row.len-p.L;if(l>0.1){p.rest={n:++rn,L:l,w:p.w};O.push({n:rn,L:l,w:p.w,r:p.r,from:p.n});}});if(row.free>0.1){row.fr={n:++rn,L:row.len,w:row.free};O.push({n:rn,L:row.len,w:row.free,r:"Rollenrest",from:0});}});
-  return{g,P,info,rows,O,used:rows.reduce((s,r)=>s+r.len,0),tp:tp.length>0};
+  return{g,P,info,rows,O,used:rows.reduce((s,r)=>s+r.len,0),tp:true,all:all.map(r=>r.name)};
+}
+function bSel(R){
+  const g=R.g,on=n=>!g.off[n];
+  const chips=R.all.map((n,i)=>`<button data-bin="${i}" style="min-height:40px;padding:0 12px;margin:2px;${on(n)?"":"opacity:.45"}">${on(n)?"✓":"○"} ${esc(n)}</button>`).join("");
+  const opts=R.all.map((n,i)=>`<option value="${i}"${g.view===n?" selected":""}>${esc(n)}</option>`).join("");
+  return `<div class="box"><b>Räume für die Rolle</b> (antippen = ein/aus)<br>${chips}<br><button data-ball="1">Alle</button> <button data-btp="1">Nur Teppich</button><br><label>Ansicht<select data-bv="1"><option value="">Ganze Wohnung (gewählte Räume)</option>${opts}</select></label></div>`;
 }
 function bRender(){
   const R=bahnCalc(),g=R.g,out=$("bOut");
-  if(!R.P.length){out.innerHTML='<p class="hint">Noch kein geschlossener Raum gezeichnet.</p>';return;}
+  if(!R.P.length){out.innerHTML=bSel(R)+'<p class="hint">Kein Raum ausgewählt oder noch kein geschlossener Raum gezeichnet.</p>';return;}
   const col=["#2a9d8f","#7b61c4","#d98a1c","#2368ad","#c0504d","#6a994e"],nm=[...new Set(R.P.map(p=>p.r))],cl=n=>col[nm.indexOf(n)%col.length];
   const xs=[],ys=[];proj.rooms.filter(r=>r.closed).forEach(r=>r.pts.forEach(p=>{xs.push(p.x);ys.push(p.y);}));
   const x0=Math.min(...xs)-.3,y0=Math.min(...ys)-.3,bw=Math.max(...xs)+.3-x0,bh=Math.max(...ys)+.3-y0,sc=620/Math.max(bw,bh),F=v=>v.toFixed(1);
   bView={x0,y0,bw,bh};
   const det=(k,t,h,d)=>`<details data-k="${k}"${(k in bOpen?bOpen[k]:d)?" open":""}><summary style="font-weight:700;padding:8px 0;cursor:pointer">${t}</summary>${h}</details>`;
-  let s1=`<div style="overflow-x:auto"><svg data-plan="1" width="640" viewBox="0 0 ${F(bw*sc)} ${F(bh*sc)}" style="background:#fff;border:1px solid ${bTap!==null?"#d62828":"#d5dfeb"};border-radius:12px">`;
+  let s1=`<div class="row"><button data-bzoom="+">＋ Größer</button><button data-bzoom="-">－ Kleiner</button><button data-bzoom="0">Einpassen</button></div><div style="overflow:auto;max-height:75vh;touch-action:pan-x pan-y"><svg data-plan="1" width="${Math.round(640*bZoom)}" viewBox="0 0 ${F(bw*sc)} ${F(bh*sc)}" style="background:#fff;border:1px solid ${bTap!==null?"#d62828":"#d5dfeb"};border-radius:12px">`;
   proj.rooms.forEach(r=>{if(r.closed)s1+=`<polygon points="${r.pts.map(p=>F((p.x-x0)*sc)+","+F((p.y-y0)*sc)).join(" ")}" fill="#f1f5fb" stroke="#6b7f96" stroke-width="1.5"/>`;});
   R.P.forEach(p=>{const d=p.d,X=d?p.a[0]:p.l[0],Y=d?p.l[0]:p.a[0],w=d?p.a[1]-p.a[0]:p.l[1]-p.l[0],h=d?p.l[1]-p.l[0]:p.a[1]-p.a[0],cx=F((X+w/2-x0)*sc);
     s1+=`<rect x="${F((X-x0)*sc)}" y="${F((Y-y0)*sc)}" width="${F(w*sc)}" height="${F(h*sc)}" fill="${cl(p.r)}22" stroke="${cl(p.r)}" stroke-width="1.5" stroke-dasharray="5 3"/><text x="${cx}" y="${F((Y+h/2-y0)*sc)}" font-size="12" font-weight="700" text-anchor="middle" fill="${cl(p.r)}"><tspan x="${cx}" dy="-1.2em">${esc(p.r.slice(0,16))}</tspan><tspan x="${cx}" dy="1.25em">Nr. ${p.n} · Bahn ${p.k}/${p.nb}</tspan><tspan x="${cx}" dy="1.25em" font-weight="400">${f(p.L)} × ${f(p.w)} m ${d?"↑":"→"}</tspan></text>`;});
@@ -1489,10 +1536,15 @@ function bRender(){
   const warn=R.P.filter(p=>p.over).map(p=>`⚠ Nr. ${p.n} (${esc(p.r)}) ist ${f(p.w)} m breit – Rolle nur ${f(g.W)} m. Naht verschieben.`).join("<br>");
   const list=R.P.map(p=>`Nr. ${p.n} · ${esc(p.r)} · Bahn ${p.k}/${p.nb}: ${f(p.L)} × ${f(p.w)} m ${p.d?"↑":"→"}`).join("<br>");
   const rlist=R.O.length?R.O.map(o=>`R${o.n} · ${esc(o.r)}${o.from?" (Rest von Nr. "+o.from+")":""}: ${f(o.L)} × ${f(o.w)} m`).join("<br>"):"Keine nennenswerten Reststücke.";
+  const sh=(g.sh||10)/100;let avail=0;
+  const sl=R.O.map(o=>{const k=Math.floor(o.w/sh+1e-9),m=k*o.L;avail+=m;return k?`R${o.n} (${esc(o.r)}): ${k} Streifen × ${f(o.L)} m = ${f(m)} lfm`:null;}).filter(Boolean);
+  if(left>0.1){const k=Math.floor(g.W/sh+1e-9),m=k*left;avail+=m;sl.push(`Rollenende: ${k} Streifen × ${f(left)} m = ${f(m)} lfm`);}
+  const need=R.info.reduce((a,i)=>a+i.sock,0);
+  const sockH=`<p class="box">Streifenbreite ${f(sh*100,1)} cm<br>${sl.join("<br>")||"Kein Rest ist breit genug."}<br><b>Bedarf Sockel: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b><br>${avail>=need?"✓ Die Reste reichen.":"⚠ Es fehlen "+f(need-avail)+" lfm."}</p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
   const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||"keine Naht";
     return `<div class="box"><b>${esc(i.r)}</b><br><label>Verlegerichtung<select data-bd="${ii}"><option value="y"${i.dir==="y"?" selected":""}>↑ senkrecht (^)</option><option value="x"${i.dir==="x"?" selected":""}>→ waagrecht (&gt;)</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
-  out.innerHTML=`${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
+  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
 }
 function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb des Raums.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.r]=cur;persist();bRender();}
 $("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
@@ -1501,6 +1553,10 @@ $("bOut").onclick=e=>{
   if(sv&&bTap!==null&&bView){const I=bahnCalc().info[bTap];if(!I){bTap=null;bRender();return;}const rc=sv.getBoundingClientRect(),px=bView.x0+(e.clientX-rc.left)/rc.width*bView.bw,py=bView.y0+(e.clientY-rc.top)/rc.height*bView.bh;bTap=null;bAdd(I,Math.round((I.dir==="y"?px:py)*20)/20);return;}
   const b=e.target.closest("button");if(!b)return;
   const D=b.dataset,R=bahnCalc();
+  if(D.bzoom!==undefined){bSetZoom(D.bzoom==="0"?1:bZoom*(D.bzoom==="+"?1.3:1/1.3));return;}
+  if(D.bin!==undefined){const n=R.all[+D.bin];g.off=g.off||{};g.view="";if(g.off[n])delete g.off[n];else g.off[n]=true;persist();bRender();return;}
+  if(D.ball!==undefined){g.off={};g.view="";persist();bRender();return;}
+  if(D.btp!==undefined){const tpn=proj.rooms.filter(r=>r.closed&&!r.parent&&/teppich/i.test(lead(r).belag||r.belag||"")).map(r=>r.name);g.off={};g.view="";if(tpn.length)R.all.forEach(n=>{if(!tpn.includes(n))g.off[n]=true;});persist();bRender();return;}
   if(D.bt!==undefined){bTap=+D.bt;bRender();return;}
   if(D.bc!==undefined){bTap=null;bRender();return;}
   if(D.bm!==undefined){const I=R.info[+D.bm],t=prompt("Naht: Abstand von "+(I.dir==="y"?"links":"oben")+" in m (z. B. 2,40)");const v=parseFloat(String(t||"").replace(",","."));if(isNaN(v))return;bAdd(I,I.ao+v);return;}
@@ -1509,9 +1565,15 @@ $("bOut").onclick=e=>{
   if(D.bx!==undefined){const[ii,k]=D.bx.split("|").map(Number),I=R.info[ii];g.sm[I.r]=I.seams.filter((_,j)=>j!==k);}
   persist();bRender();
 };
-$("bOut").onchange=e=>{const t=e.target;if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];g.rd[I.r]=t.value;delete g.sm[I.r];persist();bRender();};
-function bRead(){const g=bG();g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;g.Z=Math.max(0,parseFloat($("bZ").value)||0);g.dir=$("bD").value;g.st=$("bS").value;persist();bRender();}
-["bW","bL","bZ","bD","bS"].forEach(i=>$(i).addEventListener("change",bRead));
+function bSetZoom(z){bZoom=Math.min(6,Math.max(0.5,z));const sv=document.querySelector("#bOut svg[data-plan]");if(sv)sv.setAttribute("width",Math.round(640*bZoom));}
+let bP=null;
+$("bOut").addEventListener("touchstart",e=>{if(e.touches.length===2&&e.target.closest("svg[data-plan]"))bP={d:Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY),z:bZoom};},{passive:true});
+$("bOut").addEventListener("touchmove",e=>{if(bP&&e.touches.length===2){e.preventDefault();bSetZoom(bP.z*Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)/bP.d);}},{passive:false});
+$("bOut").addEventListener("touchend",e=>{if(e.touches.length<2)bP=null;},{passive:true});
+$("bOut").onchange=e=>{const t=e.target;
+  if(t.dataset.bv!==undefined){const g=bG(),A=bahnCalc().all;g.view=t.value===""?"":A[+t.value];persist();bRender();return;}if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];g.rd[I.r]=t.value;delete g.sm[I.r];persist();bRender();};
+function bRead(){const g=bG();g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;g.Z=Math.max(0,parseFloat($("bZ").value)||0);g.dir=$("bD").value;g.st=$("bS").value;g.sh=Math.max(1,parseFloat($("bH").value)||10);persist();bRender();}
+["bW","bL","bZ","bD","bS","bH"].forEach(i=>$(i).addEventListener("change",bRead));
 
 const ZS=[12.5,17.5,25,30,35,42,50,60,70,85,100,120,140,170,200];
 function setZoom(n){
@@ -1598,11 +1660,28 @@ $("restoreBak").onclick=()=>{
   ["_bak1","_bak2"].forEach((sx,i)=>{try{
     const d=JSON.parse(localStorage.getItem(KEY+sx)||"null");
     Object.keys((d&&d.projects)||{}).forEach(k=>{
-      if(db.projects[k]&&JSON.stringify(db.projects[k])===JSON.stringify(d.projects[k]))return;
-      const m=k+" (Stand "+(i+1)+")";if(!db.projects[m]){db.projects[m]=d.projects[k];n++;}
+      const cur=db.projects[k],old=d.projects[k];
+      if(!cur){db.projects[k]=old;n++;return;}
+      if(JSON.stringify(cur)===JSON.stringify(old))return;
+      const rc=x=>(x.rooms||[]).length;
+      if(rc(old)>rc(cur)&&confirm("„"+k+"“: Der frühere Stand hat "+rc(old)+" Räume, der aktuelle "+rc(cur)+". Früheren Stand übernehmen? (Der aktuelle wird ersetzt.)")){db.projects[k]=old;n++;}
     });
   }catch(e){}});
-  persist(n?n+" frühere Stände als eigene Baustellen hinzugefügt (Menü → Gespeicherte Baustellen).":"Keine früheren Stände gefunden.");
+  if(n&&savedKey&&db.projects[savedKey]){proj=norm(db.projects[savedKey]);refreshAll();}
+  persist(n?n+" Baustelle(n) wiederhergestellt – ohne doppelte Einträge.":"Nichts zu tun: keine neueren Stände gefunden.");
+};
+$("mergeStands").onclick=()=>{
+  const re=/ \(Stand \d+\)$/,gr={};let n=0;
+  Object.keys(db.projects).forEach(k=>{const b=k.replace(re,"");(gr[b]=gr[b]||[]).push(k);});
+  Object.keys(gr).forEach(b=>{const ks=gr[b];if(ks.length<2)return;
+    const sz=k=>(db.projects[k].rooms||[]).length*1e6+JSON.stringify(db.projects[k]).length;
+    ks.sort((x,y)=>sz(y)-sz(x));const keep=ks[0];
+    if(!confirm("„"+b+"“ hat "+ks.length+" Einträge. Behalten wird der vollständigste ("+keep+", "+(db.projects[keep].rooms||[]).length+" Räume), die anderen "+(ks.length-1)+" werden gelöscht. Fortfahren?"))return;
+    const best=db.projects[keep];ks.forEach(k=>delete db.projects[k]);db.projects[b]=best;n+=ks.length-1;
+    if(ks.includes(savedKey)){proj=norm(best);savedKey=b;db.last=b;$("project").value=b==="Ohne Name"?"":b;}
+  });
+  if(n)refreshAll();
+  persist(n?n+" doppelte Einträge zusammengeführt.":"Keine doppelten Stände gefunden.");
 };
 $("import").onclick=()=>$("file").click();
 $("file").onchange=async e=>{
@@ -1647,7 +1726,7 @@ try{
 if(!Array.isArray(db.materials))db.materials=[{id:uid(),name:"Spanplatte 2,05 × 0,94",l:2.05,b:0.94,pack:0}];
 db.materials.forEach(x=>{if(/v-?100/i.test(x.name)&&Math.abs(x.l-2.04)<1e-9&&Math.abs(x.b-0.94)<1e-9)x.l=2.01;if(!x.kind)x.kind=/v-?100/i.test(x.name)?"V100 Spanplatte":"Sonstiges";});
 if(!db.materials.some(x=>/v-?100/i.test(x.name)))db.materials.push({id:uid(),name:"V100 Spanplatte",kind:"V100 Spanplatte",l:2.01,b:0.94,d:0,pack:0,aufbau:""});
-showAll=db.showAll!==false;$("showAll").checked=showAll;
+hintApply();showAll=db.showAll!==false;$("showAll").checked=showAll;
 const lastKey=db.last&&db.projects[db.last]?db.last:Object.keys(db.projects)[0];
 if(lastKey){proj=norm(db.projects[lastKey]);savedKey=lastKey;$("project").value=lastKey==="Ohne Name"?"":lastKey;}
 else proj=newProj();
