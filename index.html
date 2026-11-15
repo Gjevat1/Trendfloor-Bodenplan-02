@@ -159,7 +159,7 @@ input,select{min-height:46px}
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Datei-Menü">☰</button>
   <button id="homeBtn" class="iconbtn" aria-label="Übersicht">🏠</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 046 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 047 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -1476,13 +1476,16 @@ $("mAdd").onclick=()=>{
 };
 const bG=()=>{db.bahn=db.bahn||{W:5,L:22,Z:5,dir:"y",st:"lo"};const g=db.bahn;g.rd=g.rd||{};g.sm=g.sm||{};return g;};
 let bTap=null,bView=null,bOpen={},bZoom=1;
-function fillBM(){const sel=$("bM"),g=bG(),cur=g.mat||"";sel.innerHTML='<option value="">– eigene Eingabe –</option>'+(db.materials||[]).map(m=>`<option value="${m.id}">${esc(m.name)} (${f(Math.max(m.l,m.b))} × ${f(Math.min(m.l,m.b))} m)</option>`).join("");sel.value=cur;}
+function fillBM(){const sel=$("bM"),g=bG(),cur=g.mat||"";sel.innerHTML='<option value="">Automatisch (Material der Räume)</option>'+(db.materials||[]).map(m=>`<option value="${m.id}">${esc(m.name)} (${f(Math.max(m.l,m.b))} × ${f(Math.min(m.l,m.b))} m)</option>`).join("")+'<option value="own">Eigene Eingabe</option>';sel.value=cur;}
 function bInit(){const g=bG();fillBM();$("bW").value=g.W;$("bL").value=g.L;$("bZ").value=g.Z;$("bD").value=g.dir+(g.fl?"1":"0");$("bS").value=g.st;$("bH").value=g.sh||10;}
 function bahnCalc(){
-  const g=bG(),W=g.W,z=g.Z/100;
+  const g=bG(),z=g.Z/100;let W=g.W,LL=g.L,src="";
   g.off=g.off||{};
   const all=proj.rooms.filter(r=>r.closed&&r.pts.length>2&&!r.parent);
   let rooms=g.view?all.filter(r=>r.name===g.view):all.filter(r=>!g.off[r.name]);
+  if(g.mat!=="own"){let m0=g.mat?db.materials.find(x=>x.id===g.mat):null;
+    if(!m0){const cn={};rooms.forEach(r=>{const m=matOf(lead(r));if(m&&Math.max(m.l,m.b)>=5&&Math.min(m.l,m.b)>0)cn[m.id]=(cn[m.id]||0)+1;});const id=Object.keys(cn).sort((a,b)=>cn[b]-cn[a])[0];if(id)m0=db.materials.find(x=>x.id===id);}
+    if(m0&&Math.max(m0.l,m0.b)>=5&&Math.min(m0.l,m0.b)>0){W=Math.min(m0.l,m0.b);LL=Math.max(m0.l,m0.b);src=m0.name;}}
   const P=[],info=[];let N=0;
   rooms.forEach(r=>{
     const dir=g.rd[r.name]||g.dir,fl=g.rf&&g.rf[r.name]!==undefined?g.rf[r.name]:!!g.fl,A=p=>dir==="y"?p.x:p.y,Lg=p=>dir==="y"?p.y:p.x;
@@ -1527,7 +1530,7 @@ function bahnCalc(){
   [...P].sort((a,b)=>b.L-a.L).forEach(p=>{let row=rows.find(r=>r.free>=p.w-1e-9&&r.len>=p.L-1e-9);if(!row){row={len:p.L,free:W,items:[]};rows.push(row);}row.free-=p.w;row.items.push(p);});
   let rn=0;const O=[];
   rows.forEach(row=>{row.items.forEach(p=>{const l=row.len-p.L;if(l>0.1){p.rest={n:++rn,L:l,w:p.w};O.push({n:rn,L:l,w:p.w,r:p.r,from:p.n});}});if(row.free>0.1){row.fr={n:++rn,L:row.len,w:row.free};O.push({n:rn,L:row.len,w:row.free,r:"Rollenrest",from:0});}});
-  return{g,P,info,rows,O,used:rows.reduce((s,r)=>s+r.len,0),tp:true,all:all.map(r=>r.name)};
+  return{g:Object.assign({},g,{W,L:LL}),src,P,info,rows,O,used:rows.reduce((s,r)=>s+r.len,0),tp:true,all:all.map(r=>r.name)};
 }
 function bSel(R){
   const g=R.g,on=n=>!g.off[n];
@@ -1536,7 +1539,7 @@ function bSel(R){
   return `<div class="box"><b>Räume für die Rolle</b> (antippen = ein/aus)<br>${chips}${proj.rooms.some(r=>r.closed&&r.parent)?"<br><small>Nicht enthalten (Teilbereiche): "+proj.rooms.filter(r=>r.closed&&r.parent).map(r=>esc(r.name)).join(", ")+"</small>":""}<br><button data-ball="1">Alle</button> <button data-btp="1">Nur Teppich</button><br><label>Ansicht<select data-bv="1"><option value="">Ganze Wohnung (gewählte Räume)</option>${opts}</select></label></div>`;
 }
 function bRender(){
-  const R=bahnCalc(),g=R.g,out=$("bOut");
+  const R=bahnCalc(),g=R.g,out=$("bOut");fillBM();$("bW").value=g.W;$("bL").value=g.L;
   if(!R.P.length){out.innerHTML=bSel(R)+'<p class="hint">Kein Raum ausgewählt oder noch kein geschlossener Raum gezeichnet.</p>';return;}
   const col=["#2a9d8f","#7b61c4","#d98a1c","#2368ad","#c0504d","#6a994e"],nm=[...new Set(R.P.map(p=>p.r))],cl=n=>col[nm.indexOf(n)%col.length];
   const xs=[],ys=[];proj.rooms.filter(r=>r.closed).forEach(r=>r.pts.forEach(p=>{xs.push(p.x);ys.push(p.y);}));
@@ -1582,7 +1585,7 @@ function bRender(){
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
   const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||"keine Naht";
     return `<div class="box"><b>${esc(i.r)}</b> · quer zur Bahn ${f(i.a1-i.a0)} m · Rolle ${f(g.W)} m · ${i.seams.length} Naht${i.seams.length===1?"":"e"}<br><label>Verlegerichtung<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select></label><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
-  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Rolle: ${f(g.W)} × ${f(g.L)} m</b><br><b>Nähte: ${nIn+dn.length}</b> (im Raum ${nIn}, an Türen ${dn.length})<br><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). Den Pfeil im Raum antippen = Richtung wechseln. „Naht antippen“: grüne Linien (Tür, Ecke, Rollenrand) rasten ein. An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
+  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Rolle: ${f(g.W)} × ${f(g.L)} m</b>${R.src?" (aus Material „"+esc(R.src)+"“)":""}<br><b>Nähte: ${nIn+dn.length}</b> (im Raum ${nIn}, an Türen ${dn.length})<br><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). Den Pfeil im Raum antippen = Richtung wechseln. „Naht antippen“: grüne Linien (Tür, Ecke, Rollenrand) rasten ein. An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
 }
 function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb von „"+I.r+"“ (gültig: "+f(I.a0-I.ao)+" bis "+f(I.a1-I.ao)+" m von "+(I.dir==="y"?"links":"oben")+"). Tippe in den Raum, in dem die Naht liegen soll.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.r]=cur;persist();bRender();}
 $("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
@@ -1615,6 +1618,7 @@ $("bOut").onchange=e=>{const t=e.target;
 function bRead(){const g=bG();
   const nd=$("bD").value,od=g.dir+(g.fl?"1":"0");if(nd!==od){const ax=nd[0]!==g.dir;if(ax&&Object.keys(g.sm).length&&!confirm("Verlegerichtung für ALLE Räume ändern? Manuell gesetzte Nähte werden gelöscht.")){$("bD").value=od;return;}if(ax)g.sm={};g.dir=nd[0];g.fl=nd[1]==="1";g.rd={};g.rf={};}
   if($("bS").value!==g.st)g.rs={};g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;g.Z=Math.max(5,parseFloat($("bZ").value)||5);$("bZ").value=g.Z;g.st=$("bS").value;g.sh=Math.min(30,Math.max(1,parseFloat($("bH").value)||10));$("bH").value=g.sh;g.mat=$("bM").value;persist();bRender();}
+["bW","bL"].forEach(i=>$(i).addEventListener("input",()=>{$("bM").value="own";}));
 $("bM").addEventListener("change",()=>{const m=(db.materials||[]).find(x=>x.id===$("bM").value);if(m){$("bW").value=Math.min(m.l,m.b);$("bL").value=Math.max(m.l,m.b);}bRead();});
 ["bW","bL","bZ","bD","bS","bH"].forEach(i=>$(i).addEventListener("change",bRead));
 
