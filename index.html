@@ -159,7 +159,7 @@ input,select{min-height:46px}
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Datei-Menü">☰</button>
   <button id="homeBtn" class="iconbtn" aria-label="Übersicht">🏠</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 042 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 043 · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -253,10 +253,10 @@ input,select{min-height:46px}
     <label>Rollenbreite (m)<input id="bW" type="number" step="0.05" inputmode="decimal"></label>
     <label>Rollenlänge (m)<input id="bL" type="number" step="0.5" inputmode="decimal"></label>
     <label>Zugabe je Seite (cm)<input id="bZ" type="number" step="1" inputmode="numeric"></label>
-    <label>Standard-Verlegerichtung<select id="bD"><option value="y">↑ senkrecht (^)</option><option value="x">→ waagrecht (&gt;)</option></select></label>
+    <label>Verlegerichtung für alle Räume<select id="bD"><option value="y">↑ senkrecht (^)</option><option value="x">→ waagrecht (&gt;)</option></select></label>
   </div>
   <label>Sockelstreifen Breite (cm)<input id="bH" type="number" min="1" step="0.5" inputmode="decimal"></label>
-    <label>Nahtvorschlag beginnt<select id="bS"><option value="lo">links / oben</option><option value="hi">rechts / unten</option></select></label>
+    <label>Nahtvorschlag für alle Räume<select id="bS"><option value="lo">links / oben bündig</option><option value="hi">rechts / unten bündig</option></select></label>
   <div id="bOut"></div>
 </section>
 
@@ -1486,20 +1486,21 @@ function bahnCalc(){
     const dir=g.rd[r.name]||g.dir,A=p=>dir==="y"?p.x:p.y,Lg=p=>dir==="y"?p.y:p.x;
     const pts=r.pts,n=pts.length,ex=[];let a0=1e9,a1=-1e9,s=0,xa=1e9,xb=-1e9,ya=1e9,yb=-1e9;
     pts.forEach((p,i)=>{const q=pts[(i+1)%n];a0=Math.min(a0,A(p));a1=Math.max(a1,A(p));s+=p.x*q.y-q.x*p.y;xa=Math.min(xa,p.x);xb=Math.max(xb,p.x);ya=Math.min(ya,p.y);yb=Math.max(yb,p.y);});
-    const ao=a0;
+    const ao=a0,snp=[];
     (r.openings||[]).forEach(o=>{
       if(o.type!=="door"&&o.type!=="door2")return;
       const p=pts[o.wall],q=pts[(o.wall+1)%n];if(!p||!q)return;
       const len=Math.hypot(q.x-p.x,q.y-p.y);if(!len)return;
       const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,t=(p.wt>0?p.wt:0.1)/2,nx=s>0?uy:-uy,ny=s>0?-ux:ux;
       const na=dir==="y"?nx:ny,nl=dir==="y"?ny:nx;
-      const e1={x:p.x+ux*o.pos,y:p.y+uy*o.pos},e2={x:p.x+ux*(o.pos+o.w),y:p.y+uy*(o.pos+o.w)};
+      const e1={x:p.x+ux*o.pos,y:p.y+uy*o.pos},e2={x:p.x+ux*(o.pos+o.w),y:p.y+uy*(o.pos+o.w)};snp.push(A(e1),A(e2));
       if(Math.abs(na)>Math.abs(nl)){if(na>0)a1=Math.max(a1,A(e1)+t);else a0=Math.min(a0,A(e1)-t);}
       else ex.push({c0:Math.min(A(e1),A(e2)),c1:Math.max(A(e1),A(e2)),sd:nl>0?1:-1,t});
     });
+    const al=(g.rs&&g.rs[r.name])||g.st;
     let sm=(g.sm[r.name]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
     const man=sm.length>0;
-    if(!man){const step=Math.max(0.1,W-2*z),k0=Math.max(1,Math.ceil((a1-a0)/step-1e-9));for(let k=1;k<k0;k++)sm.push(g.st==="hi"?a1-k*step:a0+k*step);sm.sort((a,b)=>a-b);}
+    if(!man){const step=Math.max(0.1,W-2*z),k0=Math.max(1,Math.ceil((a1-a0)/step-1e-9));for(let k=1;k<k0;k++)sm.push(al==="hi"?a1-k*step:a0+k*step);sm.sort((a,b)=>a-b);}
     const bd=[a0,...sm,a1],nb=bd.length-1;
     for(let k=0;k<nb;k++){
       const c0=bd[k],c1=bd[k+1],s0=c0-z,s1=c1+z;
@@ -1511,7 +1512,13 @@ function bahnCalc(){
       ex.forEach(e=>{if(e.c1>c0&&e.c0<c1){if(e.sd>0)hi+=e.t;else lo-=e.t;}});
       N++;P.push({n:N,r:r.name,k:k+1,nb,d:dir==="y",w:s1-s0,L:hi-lo+2*z,a:[s0,s1],l:[lo-z,hi+z],over:s1-s0>W+1e-6});
     }
-    info.push({r:r.name,dir,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2,sock:stats(r).sock});
+    const st0=Math.max(0.1,W-2*z),sn=[];
+    snp.forEach(v=>sn.push({v,k:"Tür"}));
+    for(let k=1;a0+k*st0<a1-0.05;k++)sn.push({v:a0+k*st0,k:"Rolle"});
+    for(let k=1;a1-k*st0>a0+0.05;k++)sn.push({v:a1-k*st0,k:"Rolle"});
+    pts.forEach(p=>sn.push({v:A(p),k:"Ecke"}));
+    const seen={},snaps=sn.filter(x=>x.v>a0+0.05&&x.v<a1-0.05).filter(x=>{const key=Math.round(x.v*100);if(seen[key])return false;seen[key]=1;return true;});
+    info.push({r:r.name,dir,al,snaps,cx:pts.reduce((q,p)=>q+p.x,0)/n,cy:pts.reduce((q,p)=>q+p.y,0)/n,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2,sock:stats(r).sock});
   });
   const rows=[];
   [...P].sort((a,b)=>b.L-a.L).forEach(p=>{let row=rows.find(r=>r.free>=p.w-1e-9&&r.len>=p.L-1e-9);if(!row){row={len:p.L,free:W,items:[]};rows.push(row);}row.free-=p.w;row.items.push(p);});
@@ -1538,6 +1545,11 @@ function bRender(){
   R.P.forEach(p=>{const d=p.d,X=d?p.a[0]:p.l[0],Y=d?p.l[0]:p.a[0],w=d?p.a[1]-p.a[0]:p.l[1]-p.l[0],h=d?p.l[1]-p.l[0]:p.a[1]-p.a[0],cx=F((X+w/2-x0)*sc);
     s1+=`<rect x="${F((X-x0)*sc)}" y="${F((Y-y0)*sc)}" width="${F(w*sc)}" height="${F(h*sc)}" fill="${cl(p.r)}22" stroke="${cl(p.r)}" stroke-width="1.5" stroke-dasharray="5 3"/><text x="${cx}" y="${F((Y+h/2-y0)*sc)}" font-size="12" font-weight="700" text-anchor="middle" fill="${cl(p.r)}"><tspan x="${cx}" dy="-1.2em">${esc(p.r.slice(0,16))}</tspan><tspan x="${cx}" dy="1.25em">Nr. ${p.n} · Bahn ${p.k}/${p.nb}</tspan><tspan x="${cx}" dy="1.25em" font-weight="400">${f(p.L)} × ${f(p.w)} m ${d?"↑":"→"}</tspan></text>`;});
   R.info.forEach(i=>i.seams.forEach(v=>{s1+=i.dir==="y"?`<line x1="${F((v-x0)*sc)}" y1="${F((i.ya-.1-y0)*sc)}" x2="${F((v-x0)*sc)}" y2="${F((i.yb+.1-y0)*sc)}" stroke="#d62828" stroke-width="2.5"/>`:`<line x1="${F((i.xa-.1-x0)*sc)}" y1="${F((v-y0)*sc)}" x2="${F((i.xb+.1-x0)*sc)}" y2="${F((v-y0)*sc)}" stroke="#d62828" stroke-width="2.5"/>`;}));
+  if(bTap!==null&&R.info[bTap]){const I=R.info[bTap];I.snaps.forEach(sn=>{const v=sn.v;
+    if(I.dir==="y"){const X=F((v-x0)*sc);s1+=`<line x1="${X}" y1="${F((I.ya-y0)*sc)}" x2="${X}" y2="${F((I.yb-y0)*sc)}" stroke="#2a9d3f" stroke-width="2" stroke-dasharray="6 4"/><text x="${X}" y="${F((I.ya-y0)*sc-3)}" font-size="11" text-anchor="middle" fill="#2a9d3f">${sn.k}</text>`;}
+    else{const Y=F((v-y0)*sc);s1+=`<line x1="${F((I.xa-x0)*sc)}" y1="${Y}" x2="${F((I.xb-x0)*sc)}" y2="${Y}" stroke="#2a9d3f" stroke-width="2" stroke-dasharray="6 4"/><text x="${F((I.xa-x0)*sc-3)}" y="${Y}" font-size="11" text-anchor="end" fill="#2a9d3f">${sn.k}</text>`;}});}
+  R.info.forEach((i,ii)=>{const X=(i.cx-x0)*sc,Y=(i.cy-y0)*sc+34,a=i.dir==="y"?`M${F(X)} ${F(Y+13)}L${F(X)} ${F(Y-13)}M${F(X-7)} ${F(Y-6)}L${F(X)} ${F(Y-13)}L${F(X+7)} ${F(Y-6)}`:`M${F(X-13)} ${F(Y)}L${F(X+13)} ${F(Y)}M${F(X+6)} ${F(Y-7)}L${F(X+13)} ${F(Y)}L${F(X+6)} ${F(Y+7)}`;
+    s1+=`<g data-bdir="${ii}" style="cursor:pointer"><circle cx="${F(X)}" cy="${F(Y)}" r="22" fill="#fff" fill-opacity=".92" stroke="#2368ad" stroke-width="2"/><path d="${a}" fill="none" stroke="#2368ad" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/></g>`;});
   s1+="</svg></div>";
   const rs=32,RH=Math.max(R.used,g.L),tw=g.W*rs;
   let s2=`<svg width="100%" viewBox="0 0 ${F(tw+80)} ${F(RH*rs+20)}"><rect x="10" y="10" width="${F(tw)}" height="${F(RH*rs)}" fill="#f7f9fc" stroke="#8aa0b8"/>`,yy=0,area=0;
@@ -1562,14 +1574,15 @@ function bRender(){
   const sockH=`<p class="box">Streifenbreite ${f(sh*100,1)} cm<br>${sl.join("<br>")||"Kein Rest ist breit genug."}<br><b>Bedarf Sockel: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b><br>${avail>=need?"✓ Die Reste reichen.":"⚠ Es fehlen "+f(need-avail)+" lfm."}</p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
   const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||"keine Naht";
-    return `<div class="box"><b>${esc(i.r)}</b><br><label>Verlegerichtung<select data-bd="${ii}"><option value="y"${i.dir==="y"?" selected":""}>↑ senkrecht (^)</option><option value="x"${i.dir==="x"?" selected":""}>→ waagrecht (&gt;)</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
-  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
+    return `<div class="box"><b>${esc(i.r)}</b><br><label>Verlegerichtung<select data-bd="${ii}"><option value="y"${i.dir==="y"?" selected":""}>↑ senkrecht (^)</option><option value="x"${i.dir==="x"?" selected":""}>→ waagrecht (&gt;)</option></select></label><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
+  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). Den Pfeil im Raum antippen = Richtung wechseln. „Naht antippen“: grüne Linien (Tür, Ecke, Rollenrand) rasten ein. An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
 }
 function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb des Raums.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.r]=cur;persist();bRender();}
 $("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
 $("bOut").onclick=e=>{
-  const g=bG(),sv=e.target.closest("svg[data-plan]");
-  if(sv&&bTap!==null&&bView){const I=bahnCalc().info[bTap];if(!I){bTap=null;bRender();return;}const rc=sv.getBoundingClientRect(),px=bView.x0+(e.clientX-rc.left)/rc.width*bView.bw,py=bView.y0+(e.clientY-rc.top)/rc.height*bView.bh;bTap=null;bAdd(I,Math.round((I.dir==="y"?px:py)*20)/20);return;}
+  const g=bG(),sv=e.target.closest("svg[data-plan]"),ga=e.target.closest("[data-bdir]");
+  if(ga&&bTap===null){const I=bahnCalc().info[+ga.dataset.bdir];if(I){g.rd[I.r]=I.dir==="y"?"x":"y";delete g.sm[I.r];persist();bRender();}return;}
+  if(sv&&bTap!==null&&bView){const I=bahnCalc().info[bTap];if(!I){bTap=null;bRender();return;}const rc=sv.getBoundingClientRect(),px=bView.x0+(e.clientX-rc.left)/rc.width*bView.bw,py=bView.y0+(e.clientY-rc.top)/rc.height*bView.bh;bTap=null;let v=I.dir==="y"?px:py,best=null;const tol=18*bView.bw/rc.width;I.snaps.forEach(q=>{const d=Math.abs(q.v-v);if(d<tol&&(!best||d<best.d))best={v:q.v,d};});bAdd(I,best?best.v:Math.round(v*20)/20);return;}
   const b=e.target.closest("button");if(!b)return;
   const D=b.dataset,R=bahnCalc();
   if(D.bzoom!==undefined){bSetZoom(D.bzoom==="0"?1:bZoom*(D.bzoom==="+"?1.3:1/1.3));return;}
@@ -1590,8 +1603,11 @@ $("bOut").addEventListener("touchstart",e=>{if(e.touches.length===2&&e.target.cl
 $("bOut").addEventListener("touchmove",e=>{if(bP&&e.touches.length===2){e.preventDefault();bSetZoom(bP.z*Math.hypot(e.touches[0].clientX-e.touches[1].clientX,e.touches[0].clientY-e.touches[1].clientY)/bP.d);}},{passive:false});
 $("bOut").addEventListener("touchend",e=>{if(e.touches.length<2)bP=null;},{passive:true});
 $("bOut").onchange=e=>{const t=e.target;
+  if(t.dataset.bal!==undefined){const g=bG(),I=bahnCalc().info[+t.dataset.bal];g.rs=g.rs||{};g.rs[I.r]=t.value;delete g.sm[I.r];persist();bRender();return;}
   if(t.dataset.bv!==undefined){const g=bG(),A=bahnCalc().all;g.view=t.value===""?"":A[+t.value];persist();bRender();return;}if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];g.rd[I.r]=t.value;delete g.sm[I.r];persist();bRender();};
-function bRead(){const g=bG();g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;g.Z=Math.max(0,parseFloat($("bZ").value)||0);g.dir=$("bD").value;g.st=$("bS").value;g.sh=Math.max(1,parseFloat($("bH").value)||10);persist();bRender();}
+function bRead(){const g=bG();
+  const nd=$("bD").value;if(nd!==g.dir){if(Object.keys(g.sm).length&&!confirm("Verlegerichtung für ALLE Räume ändern? Manuell gesetzte Nähte werden gelöscht.")){$("bD").value=g.dir;return;}g.dir=nd;g.rd={};g.sm={};}
+  if($("bS").value!==g.st)g.rs={};g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;g.Z=Math.max(0,parseFloat($("bZ").value)||0);g.st=$("bS").value;g.sh=Math.max(1,parseFloat($("bH").value)||10);persist();bRender();}
 ["bW","bL","bZ","bD","bS","bH"].forEach(i=>$(i).addEventListener("change",bRead));
 
 const ZS=[12.5,17.5,25,30,35,42,50,60,70,85,100,120,140,170,200];
