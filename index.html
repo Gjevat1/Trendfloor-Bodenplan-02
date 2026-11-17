@@ -35,6 +35,8 @@ button.danger{color:#b42318}
 section,details.card{scroll-margin-top:140px}
 .tabbar button.active{background:var(--blue);border-color:var(--blue);color:#fff}
 main{max-width:760px;margin:0 auto;padding:14px 12px 60px}
+.bt{border-collapse:collapse;width:100%;font-size:.9rem}.bt th,.bt td{padding:6px;border-bottom:1px solid #d5dfeb;text-align:left}.bt td:nth-child(n+3),.bt th:nth-child(n+3){text-align:right}
+#verFoot{text-align:center;font-size:.75rem;color:#7a8aa6;padding:4px 12px calc(14px + env(safe-area-inset-bottom,0px))}
 .card{background:#fff;border:1px solid var(--line);border-radius:20px;padding:18px;margin-bottom:14px}
 h2{font-size:1.2rem;margin:0 0 12px}
 h3{font-size:1.05rem;margin:20px 0 8px}
@@ -159,7 +161,7 @@ input,select{min-height:46px}
 <header class="top">
   <button id="menuBtn" class="iconbtn" aria-label="Datei-Menü">☰</button>
   <button id="homeBtn" class="iconbtn" aria-label="Übersicht">🏠</button>
-  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN 052 · <span id="projLbl"></span></div></div>
+  <div class="ttl"><h1>TRENDFLOOR</h1><div class="sub">BODENPLAN <span class="verTxt"></span> · <span id="projLbl"></span></div></div>
   <button id="topExport" class="topbtn" aria-label="Sicherung">💾<span class="lbl"> Speichern</span></button>
 </header>
 <div id="tabs" class="tabbar">
@@ -174,7 +176,7 @@ input,select{min-height:46px}
 <p id="saveStatus" class="status"></p>
 
 <section id="splash" data-tab="h">
-  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN 032</span></div>
+  <div class="sp-head"><b>TRENDFLOOR</b><span>BODENPLAN <span class="verTxt"></span></span></div>
   <div class="sp-img"></div>
   <div class="sp-body">
     <h2 id="hello">Guten Tag!</h2>
@@ -194,7 +196,7 @@ input,select{min-height:46px}
     <button class="tile" data-go="m|fMat"><i>📦</i><b>Material</b><small>Materialverwaltung</small></button>
     <button class="tile" data-go="a|fSum"><i>📊</i><b>Auswertung</b><small>Berichte &amp; Pläne</small></button>
   </div>
-  <div class="banner"><b>Trendfloor Bodenplan – Version 038</b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
+  <div class="banner"><b>Trendfloor Bodenplan – Version <span class="verTxt"></span></b><small>Modern. Einfach. Effizient.</small><em>Ihr Projekt in besten Händen!</em></div>
 </section>
 
 <section class="card">
@@ -332,6 +334,7 @@ input,select{min-height:46px}
   <div class="row"><button id="copy">Zusammenfassung kopieren</button></div>
 </details>
 </main>
+<footer id="verFoot">Trendfloor Bodenplan · Version <span class="verTxt"></span></footer>
 
 <div id="drawer" class="drawer">
   <div id="drawerBk" class="bk"></div>
@@ -353,7 +356,9 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
+const APP_VERSION="054"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
+document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
 const W=800,H=800;
 const canvas=$("plan"),ctx=canvas.getContext("2d");
@@ -1487,7 +1492,7 @@ const bG=()=>{
       BSET.concat(["mat"]).forEach(k=>{if(o[k]!==undefined)proj.bahn[k]=o[k];});
       if(proj.bahn.nd===17)proj.bahn.nd=20;db.bahnMig=true;}
   }
-  const g=proj.bahn;g.rd=g.rd||{};g.sm=g.sm||{};
+  const g=proj.bahn;g.rd=g.rd||{};g.sm=g.sm||{};g.nn=g.nn||{};
   if(!g.sh8){if(g.sh==null||g.sh===10||g.sh>=30)g.sh=8;g.sh8=1;if(db.bahnDef&&(db.bahnDef.sh==null||db.bahnDef.sh===10||db.bahnDef.sh>=30))db.bahnDef.sh=8;}
   return g;
 };
@@ -1515,7 +1520,7 @@ function bahnCalc(){
       if(o.type!=="door"&&o.type!=="door2"&&!bal)return;
       const p=pts[o.wall],q=pts[(o.wall+1)%n];if(!p||!q)return;
       const len=Math.hypot(q.x-p.x,q.y-p.y);if(!len)return;
-      const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,t=bal?(g.nd==null?20:g.nd)/100:(p.wt>0?p.wt:0.1)/2,nx=s>0?uy:-uy,ny=s>0?-ux:ux;
+      const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,t=bal?(g.nd==null?20:g.nd)/100:((o.dir||"in")==="in"?0:(p.wt>0?p.wt:0.1)),nx=s>0?uy:-uy,ny=s>0?-ux:ux;
       const na=dir==="y"?nx:ny,nl=dir==="y"?ny:nx;
       const e1={x:p.x+ux*o.pos,y:p.y+uy*o.pos},e2={x:p.x+ux*(o.pos+o.w),y:p.y+uy*(o.pos+o.w)};snp.push(A(e1),A(e2));
       if(Math.abs(na)>Math.abs(nl)){if(bal)nich=true;if(na>0)a1=Math.max(a1,A(e1)+t);else a0=Math.min(a0,A(e1)-t);}
@@ -1524,8 +1529,9 @@ function bahnCalc(){
     const al=(g.rs&&g.rs[r.id])||g.st;
     const zr=Object.assign({l:5,r:5,t:5,b:5},g.za||{},(g.zr&&g.zr[r.id])||{}),q=k=>(+zr[k]||0)/100;
     const zA0=dir==="y"?q("l"):q("t"),zA1=dir==="y"?q("r"):q("b"),zE0=dir==="y"?q("t"):q("l"),zE1=dir==="y"?q("b"):q("r");
-    let sm=(g.sm[r.id]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
-    const man=sm.length>0;
+    const nn=!!g.nn[r.id];
+    let sm=nn?[]:(g.sm[r.id]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
+    const man=sm.length>0||nn,needW=(a1-a0)+zA0+zA1;
     if(!man&&(a1-a0)+zA0+zA1>W+1e-9){
       let pos,first=true,n=0;
       if(al==="hi"){pos=a1;while(n++<50){if((pos-a0)+zA0+(first?zA1:z)<=W+1e-9)break;pos-=Math.max(0.1,W-(first?zA1:z)-z);sm.push(pos);first=false;}}
@@ -1550,7 +1556,7 @@ function bahnCalc(){
     for(let k=1;a1-k*st0>a0+0.05;k++)sn.push({v:a1-k*st0,k:"Rolle"});
     pts.forEach(p=>sn.push({v:A(p),k:"Ecke"}));
     const seen={},snaps=sn.filter(x=>x.v>a0+0.05&&x.v<a1-0.05).filter(x=>{const key=Math.round(x.v*100);if(seen[key])return false;seen[key]=1;return true;});
-    info.push({zr,own:(g.zr&&g.zr[r.id])||{},sock:stats(r).sock,r:r.name,id:r.id,nich,dir,fl,poly:pts,al,snaps,cx:pts.reduce((q,p)=>q+p.x,0)/n,cy:pts.reduce((q,p)=>q+p.y,0)/n,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2});
+    info.push({zr,own:(g.zr&&g.zr[r.id])||{},sock:stats(r).sock,r:r.name,id:r.id,nich,dir,fl,poly:pts,al,snaps,nn,needW,cx:pts.reduce((q,p)=>q+p.x,0)/n,cy:pts.reduce((q,p)=>q+p.y,0)/n,ao,a0,a1,man,seams:sm,bx:xb-xa,by:yb-ya,xa,xb,ya,yb,m2:Math.abs(s)/2});
   });
   const rows=[];
   [...P].sort((a,b)=>b.L-a.L).forEach(p=>{let row=rows.find(r=>r.free>=p.w-1e-9&&r.len>=p.L-1e-9);if(!row){row={len:p.L,free:W,items:[]};rows.push(row);}row.free-=p.w;row.items.push(p);});
@@ -1602,9 +1608,12 @@ function bRender(){
   if(endO)s2+=rest(10,10+R.used*rs,endO);
   s2+="</svg>";
   const left=g.L-R.used,fill=R.used>0?area/(R.used*g.W)*100:0;
-  const warn=[...R.P.filter(p=>p.nb>1&&p.w<0.4).map(p=>`⚠ Nr. ${p.n} (${esc(p.r)}) ist nur ${f(p.w)} m breit – Naht besser verschieben.`),...R.P.filter(p=>p.over).map(p=>`⚠ Nr. ${p.n} (${esc(p.r)}) ist ${f(p.w)} m breit – Rolle nur ${f(g.W)} m. Naht verschieben.`)].join("<br>");
+  const warn=[...R.P.filter(p=>p.nb>1&&p.w<0.4).map(p=>`⚠ Nr. ${p.n} (${esc(p.r)}) ist nur ${f(p.w)} m breit – Naht besser verschieben.`),...R.P.filter(p=>p.over).map(p=>{const I=R.info.find(q=>q.r===p.r);return `⚠ Nr. ${p.n} (${esc(p.r)}) ist ${f(p.w)} m breit – Rolle nur ${f(g.W)} m. ${I&&I.man?"So von dir festgelegt – bitte vor Ort prüfen.":"Naht verschieben."}`;})].join("<br>");
   const list=R.P.map(p=>`Nr. ${p.n} · ${esc(p.r)} · Bahn ${p.k}/${p.nb}: ${f(p.L)} × ${f(p.w)} m ${p.ar}`).join("<br>");
   const rlist=R.O.length?R.O.map(o=>`R${o.n} · ${esc(o.r)}${o.from?" (Rest von Nr. "+o.from+")":""}: ${f(o.L)} × ${f(o.w)} m`).join("<br>"):"Keine nennenswerten Reststücke.";
+  let cum=0;const calcRows=R.rows.map((row,k)=>{cum+=row.len;return `<tr><td>${k+1}</td><td>${row.items.map(p=>esc(p.r)+(p.nb>1?" (Bahn "+p.k+"/"+p.nb+")":"")+" "+f(p.w)+" m").join(" + ")}</td><td>${f(row.len)}</td><td>${f(cum)}</td></tr>`;}).join("");
+  const calcRest=R.rows.map((row,k)=>row.free>0.1?`Reihe ${k+1}: ${f(row.free)} m breit × ${f(row.len)} m`:"").filter(Boolean).join("<br>");
+  const calcH=`<div style="overflow-x:auto"><table class="bt"><tr><th>Reihe</th><th>Bahnen (Breite)</th><th>Länge m</th><th>Summe m</th></tr>${calcRows}</table></div><p class="box"><b>Rolle ${f(g.L)} m − Verbrauch ${f(R.used)} m = ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}</b>${calcRest?"<br>Reststreifen neben den Bahnen (z. B. Sockel):<br>"+calcRest:""}<br><small>Türnaht: unter dem Türblatt. Der Raum, in den die Tür aufgeht, endet an der Wandkante; der andere Teppich läuft durch die Wandstärke.</small></p>`;
   const OO=endO?[...R.O,endO]:R.O,strips=[];
   OO.forEach(o=>{const n=Math.floor(o.w/sh+1e-9);for(let j=0;j<n;j++)strips.push({lb:o.lb||"R"+o.n,r:o.r,rem:o.L});});
   const avail=strips.reduce((a,x)=>a+x.rem,0),needs=R.info.map(i=>({r:i.r,n:i.sock})).sort((a,b)=>b.n-a.n);
@@ -1612,15 +1621,15 @@ function bRender(){
   const need=R.info.reduce((a,i)=>a+i.sock,0);
   const sockH=`<p class="box">Wandsockel (an die Wand geklebt), Streifenbreite ${f(sh*100,1)} cm. Die Streifen sind auf den Resten der Rolle als orange Linien eingezeichnet.<br>${needs.map(nd=>`<b>${esc(nd.r)}</b>: Bedarf ${f(nd.n)} lfm → ${nd.got||"–"}${nd.miss>0.01?" <b>⚠ es fehlen "+f(nd.miss)+" lfm</b>":" ✓"}`).join("<br>")}<br><b>Bedarf gesamt: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b></p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
-  const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||"keine Naht";
-    return `<div class="box"><b>${esc(i.r)}</b> · quer zur Bahn ${f(i.a1-i.a0)} m${i.nich?" (mit Balkontür-Nische)":""} · Rolle ${f(g.W)} m · ${i.seams.length} Naht${i.seams.length===1?"":"e"}<br><label>Verlegerichtung<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select></label><div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">${[["l","links"],["r","rechts"],["t","oben"],["b","unten"]].map(o=>`<label style="flex:1;min-width:70px;font-size:.85rem">Zugabe ${o[1]} (cm)<input type="number" min="0" step="0.5" inputmode="decimal" data-bza="${ii}|${o[0]}" value="${i.own[o[0]]==null?"":i.own[o[0]]}" placeholder="${f(i.zr[o[0]],1)}" style="min-height:48px;font-size:1rem"></label>`).join("")}</div><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?` <button data-bz="${ii}">Alle löschen</button>`:i.seams.length?` <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
-  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Rolle: ${f(g.W)} × ${f(g.L)} m</b>${R.src?" (aus Material „"+esc(R.src)+"“)":""}<br><b>Nähte: ${nIn+dn.length}</b> (im Raum ${nIn}, an Türen ${dn.length})<br><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p><h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). Den Pfeil im Raum antippen = Richtung wechseln. „Naht antippen“: grüne Linien (Tür, Ecke, Rollenrand) rasten ein. An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
+  const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||(i.nn?"keine Naht (von dir festgelegt)":"keine Naht");
+    return `<div class="box"><b>${esc(i.r)}</b> · quer zur Bahn ${f(i.a1-i.a0)} m${i.nich?" (mit Balkontür-Nische)":""} · Rolle ${f(g.W)} m · ${i.seams.length} Naht${i.seams.length===1?"":"e"}<br><label>Verlegerichtung<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select></label><div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">${[["l","links"],["r","rechts"],["t","oben"],["b","unten"]].map(o=>`<label style="flex:1;min-width:70px;font-size:.85rem">Zugabe ${o[1]} (cm)<input type="number" min="0" step="0.5" inputmode="decimal" data-bza="${ii}|${o[0]}" value="${i.own[o[0]]==null?"":i.own[o[0]]}" placeholder="${f(i.zr[o[0]],1)}" style="min-height:48px;font-size:1rem"></label>`).join("")}</div><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}${!i.man&&i.seams.length?` <small style="color:#5a6b80">– Grund: Raumbreite${i.nich?" inkl. Balkontür-Nische":""} + Zugabe = ${f(i.needW)} m, Rolle nur ${f(g.W)} m</small>`:""}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?`${i.nn?"":` <button data-bn="${ii}">Keine Naht</button>`} <button data-bz="${ii}">Zurück zum Vorschlag</button>`:i.seams.length?` <button data-bn="${ii}">Vorschlag entfernen</button> <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
+  out.innerHTML=`${bSel(R)}${det("plan","Plan: Maße und m²",`<p class="box">${plan}<br><b>Gesamt: ${f(tot)} m²</b></p>`,0)}${bTap!==null?`<p class="box" style="border-color:#d62828"><b>Tippe im Grundriss auf die Naht für „${esc(R.info[bTap]?R.info[bTap].r:"")}“.</b> <button data-bc="1">Abbrechen</button></p>`:""}<h3>Grundriss mit Bahnen</h3>${s1}${det("naht","Richtung und Nähte je Raum",ctl,1)}<p class="box"><b>Rolle: ${f(g.W)} × ${f(g.L)} m</b>${R.src?" (aus Material „"+esc(R.src)+"“)":""}<br><b>Nähte: ${nIn+dn.length}</b> (im Raum ${nIn}, an Türen ${dn.length})<br><b>Verbrauch: ${f(R.used)} m</b> von ${f(g.L)} m Rolle · ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}<br>Rollenfläche genutzt: ${f(fill,0)} % (Rest = Verschnitt)${R.tp?"":"<br>Hinweis: Kein Raum mit Belag „Teppich“ – es werden alle Räume gerechnet."}${warn?"<br>"+warn:""}</p>${det("calc","Rollenrechnung: Länge je Reihe und Rest",calcH,1)}<h3>Zuschnitt auf der Rolle</h3>${s2}${det("liste","Zuschnittliste (Länge × Breite, inkl. Zugabe)",`<p class="box">${list}</p>`,0)}${det("rest","Reststücke",`<p class="box">${rlist}</p>`,0)}${det("sock","Sockelleisten aus Resten",sockH,1)}${det("hint","Hinweise",`<p class="hint">Rote Linien = Nähte. Pfeil ↑/→ = Verlegerichtung (Strich). Den Pfeil im Raum antippen = Richtung wechseln. „Naht antippen“: grüne Linien (Tür, Ecke, Rollenrand) rasten ein. An Türen reichen die Bahnen bis zur Wandmitte. Nr. = Bahn, R = Reststück. Maße in m: Länge × Breite. Der Grundriss lässt sich seitlich wischen.</p>`,0)}`;
 }
-function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb von „"+I.r+"“ (gültig: "+f(I.a0-I.ao)+" bis "+f(I.a1-I.ao)+" m von "+(I.dir==="y"?"links":"oben")+"). Tippe in den Raum, in dem die Naht liegen soll.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.id]=cur;persist();bRender();}
+function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht liegt außerhalb von „"+I.r+"“ (gültig: "+f(I.a0-I.ao)+" bis "+f(I.a1-I.ao)+" m von "+(I.dir==="y"?"links":"oben")+"). Tippe in den Raum, in dem die Naht liegen soll.");return;}const cur=I.man?I.seams.slice():[];cur.push(v);g.sm[I.id]=cur;delete g.nn[I.id];persist();bRender();}
 $("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
 $("bOut").onclick=e=>{
   const g=bG(),sv=e.target.closest("svg[data-plan]"),ga=e.target.closest("[data-bdir]");
-  if(ga&&bTap===null){const I=bahnCalc().info[+ga.dataset.bdir];if(I){const nx=((I.dir==="y"?0:1)+(I.fl?2:0)+1)%4,nd=nx%2===0?"y":"x";if(nd!==I.dir)delete g.sm[I.id];g.rd[I.id]=nd;g.rf=g.rf||{};g.rf[I.id]=nx>=2;persist();bRender();}return;}
+  if(ga&&bTap===null){const I=bahnCalc().info[+ga.dataset.bdir];if(I){const nx=((I.dir==="y"?0:1)+(I.fl?2:0)+1)%4,nd=nx%2===0?"y":"x";if(nd!==I.dir){delete g.sm[I.id];delete g.nn[I.id];}g.rd[I.id]=nd;g.rf=g.rf||{};g.rf[I.id]=nx>=2;persist();bRender();}return;}
   if(sv&&bTap!==null&&bView){const RR=bahnCalc();let I=RR.info[bTap];if(!I){bTap=null;bRender();return;}const rc=sv.getBoundingClientRect(),px=bView.x0+(e.clientX-rc.left)/rc.width*bView.bw,py=bView.y0+(e.clientY-rc.top)/rc.height*bView.bh;{const hit=RR.info.find(q=>inPoly(px,py,q.poly));if(hit)I=hit;}bTap=null;let v=I.dir==="y"?px:py,best=null;const tol=18*bView.bw/rc.width;I.snaps.forEach(q=>{const d=Math.abs(q.v-v);if(d<tol&&(!best||d<best.d))best={v:q.v,d};});bAdd(I,best?best.v:Math.round(v*20)/20);return;}
   const b=e.target.closest("button");if(!b)return;
   const D=b.dataset,R=bahnCalc();
@@ -1631,9 +1640,10 @@ $("bOut").onclick=e=>{
   if(D.bt!==undefined){bTap=+D.bt;bRender();return;}
   if(D.bc!==undefined){bTap=null;bRender();return;}
   if(D.bm!==undefined){const I=R.info[+D.bm],t=prompt("Naht: Abstand von "+(I.dir==="y"?"links":"oben")+" in m (z. B. 2,40)");const v=parseFloat(String(t||"").replace(",","."));if(isNaN(v))return;bAdd(I,I.ao+v);return;}
-  if(D.ba!==undefined){const I=R.info[+D.ba];g.sm[I.id]=I.seams.slice();}
-  if(D.bz!==undefined)delete g.sm[R.info[+D.bz].id];
-  if(D.bx!==undefined){const[ii,k]=D.bx.split("|").map(Number),I=R.info[ii];g.sm[I.id]=I.seams.filter((_,j)=>j!==k);}
+  if(D.ba!==undefined){const I=R.info[+D.ba];g.sm[I.id]=I.seams.slice();delete g.nn[I.id];}
+  if(D.bn!==undefined){const I=R.info[+D.bn];delete g.sm[I.id];g.nn[I.id]=true;}
+  if(D.bz!==undefined){const I=R.info[+D.bz];delete g.sm[I.id];delete g.nn[I.id];}
+  if(D.bx!==undefined){const[ii,k]=D.bx.split("|").map(Number),I=R.info[ii],rest=I.seams.filter((_,j)=>j!==k);if(rest.length)g.sm[I.id]=rest;else{delete g.sm[I.id];g.nn[I.id]=true;}}
   persist();bRender();
 };
 function bSetZoom(z){bZoom=Math.min(6,Math.max(0.5,z));const sv=document.querySelector("#bOut svg[data-plan]");if(sv)sv.setAttribute("width",Math.round(640*bZoom));}
@@ -1644,7 +1654,7 @@ $("bOut").addEventListener("touchend",e=>{if(e.touches.length<2)bP=null;},{passi
 $("bOut").onchange=e=>{const t=e.target;
   if(t.dataset.bza!==undefined){const[ii,sd]=t.dataset.bza.split("|"),I=bahnCalc().info[+ii],g=bG();g.zr=g.zr||{};const o=g.zr[I.id]=g.zr[I.id]||{};if(t.value==="")delete o[sd];else o[sd]=Math.max(0,parseFloat(t.value)||0);persist();bRender();return;}
   if(t.dataset.bal!==undefined){const g=bG(),I=bahnCalc().info[+t.dataset.bal];g.rs=g.rs||{};g.rs[I.id]=t.value;delete g.sm[I.id];persist();bRender();return;}
-  if(t.dataset.bv!==undefined){const g=bG(),A=bahnCalc().allId;g.view=t.value===""?"":A[+t.value];persist();bRender();return;}if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];if(t.value[0]!==I.dir)delete g.sm[I.id];g.rd[I.id]=t.value[0];g.rf=g.rf||{};g.rf[I.id]=t.value[1]==="1";persist();bRender();};
+  if(t.dataset.bv!==undefined){const g=bG(),A=bahnCalc().allId;g.view=t.value===""?"":A[+t.value];persist();bRender();return;}if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];if(t.value[0]!==I.dir){delete g.sm[I.id];delete g.nn[I.id];}g.rd[I.id]=t.value[0];g.rf=g.rf||{};g.rf[I.id]=t.value[1]==="1";persist();bRender();};
 function bRead(){const g=bG();
   const nd=$("bD").value,od=g.dir+(g.fl?"1":"0");if(nd!==od){const ax=nd[0]!==g.dir;if(ax&&Object.keys(g.sm).length&&!confirm("Verlegerichtung für ALLE Räume ändern? Manuell gesetzte Nähte werden gelöscht.")){$("bD").value=od;return;}if(ax)g.sm={};g.dir=nd[0];g.fl=nd[1]==="1";g.rd={};g.rf={};}
   if($("bS").value!==g.st)g.rs={};g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;{const v=parseFloat($("bZ").value);g.Z=isNaN(v)?5:Math.max(0,v);$("bZ").value=g.Z;g.za={};["l","r","t","b"].forEach(k=>{const w=parseFloat($("bZ"+k).value);g.za[k]=isNaN(w)?5:Math.max(0,w);$("bZ"+k).value=g.za[k];});}g.st=$("bS").value;if($("bH").value==="other"){const t=parseFloat(String(prompt("Streifenbreite in cm (1–30)")||"").replace(",","."));bHset(isNaN(t)?(g.sh||8):Math.min(30,Math.max(1,t)));}g.sh=parseFloat($("bH").value)||8;g.mat=$("bM").value;{const a=parseFloat($("bN").value),b=parseFloat($("bNW").value);g.nd=isNaN(a)?20:Math.max(0,a);g.nw=isNaN(b)?1.6:Math.max(0.5,b);}db.bahnDef={};BSET.forEach(k=>{db.bahnDef[k]=g[k];});persist();bRender();}
