@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="054"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="055"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -631,6 +631,16 @@ function draw(){
     const x1=A.x+ux*q.s*ppm,y1=A.y+uy*q.s*ppm,x2=A.x+ux*q.e*ppm,y2=A.y+uy*q.e*ppm;
     const seg=(c,w)=>{ctx.strokeStyle=c;ctx.lineWidth=w;ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(x2,y2);ctx.stroke();};
     ctx.lineCap="butt";
+    if(o.type==="balcony"&&(o.nt!=null||o.nl>0)){
+      const nl=Math.min(o.nl>0?o.nl:q.w,q.L-q.s),nt=o.nt!=null?o.nt:((proj.bahn&&proj.bahn.nd!=null?proj.bahn.nd:20)/100);
+      let nx=-uy,ny=ux;
+      if(inPoly((x1+x2)/2/ppm+nx*0.05,(y1+y2)/2/ppm+ny*0.05,rm.pts)){nx=-nx;ny=-ny;}
+      const ex2=x1+ux*nl*ppm,ey2=y1+uy*nl*ppm,d=nt*ppm;
+      ctx.fillStyle="#2e9e5b55";ctx.strokeStyle="#2e9e5b";ctx.lineWidth=2;
+      ctx.beginPath();ctx.moveTo(x1,y1);ctx.lineTo(ex2,ey2);ctx.lineTo(ex2+nx*d,ey2+ny*d);ctx.lineTo(x1+nx*d,y1+ny*d);ctx.closePath();ctx.fill();ctx.stroke();
+      ctx.fillStyle="#1d6b3c";ctx.font="bold 22px Arial";ctx.textAlign="center";ctx.textBaseline="middle";
+      ctx.fillText("N "+nl.toFixed(2).replace(".",",")+" × "+nt.toFixed(2).replace(".",","),(x1+ex2)/2+nx*(d+16),(y1+ey2)/2+ny*(d+16));
+    }
     if(sel&&sel.t==="o"&&sel.o===o)seg("#ff9f1c",20);
     seg("#fff",14);seg(OT[o.type].c,o.type==="gap"?4:9);
     if(o.type==="window")seg("#fff",2);
@@ -1305,6 +1315,17 @@ function renderOpens(){
       if(o.type==="door"||(o.type==="balcony"&&q.w<1.4))sl("hinge","l",[["l","Anschlag links"],["r","Anschlag rechts"]]);
     }
     if(o.type==="gap"){const gb=document.createElement("button");gb.textContent="ganze Wand";gb.onclick=()=>{snap();o.pos=0;o.w=q.L;changed();};ex.push(gb);}
+    if(o.type==="balcony"){
+      const nf=(lab,key,def)=>{const l=document.createElement("label"),i=document.createElement("input");
+        i.type="number";i.step="0.01";i.min="0";i.setAttribute("inputmode","decimal");i.placeholder=def.toFixed(2);
+        i.value=o[key]!=null?o[key].toFixed(2):"";
+        i.onchange=()=>{const v=parseFloat(String(i.value).replace(",","."));snap();if(isNaN(v)||v<=0)delete o[key];else o[key]=v;changed();};
+        l.append(lab,i);ex.push(l);};
+      nf("Nische Länge (m)","nl",q.w);
+      nf("Nische Tiefe (m)","nt",((bG().nd==null?20:bG().nd)/100));
+      const wt=room().pts[q.i]&&room().pts[q.i].wt;
+      if(o.nt!=null&&wt>0&&o.nt>wt+0.005){const w=document.createElement("small");w.style.color="#c0392b";w.textContent="Achtung: Nische tiefer als die Wand ("+(wt*100).toFixed(1).replace(".",",")+" cm).";ex.push(w);}
+    }
     row.append(t,mk("Breite (m)",q.w,0.3,v=>{o.w=v;}),mk("ab Wandanfang (m)",q.s,0,v=>{o.pos=v;}),...ex,del);
     box.appendChild(row);
   });
@@ -1516,13 +1537,13 @@ function bahnCalc(){
     pts.forEach((p,i)=>{const q=pts[(i+1)%n];a0=Math.min(a0,A(p));a1=Math.max(a1,A(p));s+=p.x*q.y-q.x*p.y;xa=Math.min(xa,p.x);xb=Math.max(xb,p.x);ya=Math.min(ya,p.y);yb=Math.max(yb,p.y);});
     const ao=a0,snp=[];let nich=false;
     (r.openings||[]).forEach(o=>{
-      const bal=o.type==="balcony"&&o.w>=(g.nw==null?1.6:g.nw)-0.01;
+      const bal=o.type==="balcony"&&(o.nt!=null||o.w>=(g.nw==null?1.6:g.nw)-0.01);
       if(o.type!=="door"&&o.type!=="door2"&&!bal)return;
       const p=pts[o.wall],q=pts[(o.wall+1)%n];if(!p||!q)return;
       const len=Math.hypot(q.x-p.x,q.y-p.y);if(!len)return;
-      const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,t=bal?(g.nd==null?20:g.nd)/100:((o.dir||"in")==="in"?0:(p.wt>0?p.wt:0.1)),nx=s>0?uy:-uy,ny=s>0?-ux:ux;
+      const ux=(q.x-p.x)/len,uy=(q.y-p.y)/len,t=bal?(o.nt!=null?o.nt:(g.nd==null?20:g.nd)/100):((o.dir||"in")==="in"?0:(p.wt>0?p.wt:0.1)),nx=s>0?uy:-uy,ny=s>0?-ux:ux;
       const na=dir==="y"?nx:ny,nl=dir==="y"?ny:nx;
-      const e1={x:p.x+ux*o.pos,y:p.y+uy*o.pos},e2={x:p.x+ux*(o.pos+o.w),y:p.y+uy*(o.pos+o.w)};snp.push(A(e1),A(e2));
+      const e1={x:p.x+ux*o.pos,y:p.y+uy*o.pos},e2={x:p.x+ux*(o.pos+(bal&&o.nl>0?o.nl:o.w)),y:p.y+uy*(o.pos+(bal&&o.nl>0?o.nl:o.w))};snp.push(A(e1),A(e2));
       if(Math.abs(na)>Math.abs(nl)){if(bal)nich=true;if(na>0)a1=Math.max(a1,A(e1)+t);else a0=Math.min(a0,A(e1)-t);}
       else ex.push({c0:Math.min(A(e1),A(e2)),c1:Math.max(A(e1),A(e2)),sd:nl>0?1:-1,t});
     });
