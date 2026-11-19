@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="059"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="060"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -1330,7 +1330,7 @@ function renderOpens(){
     box.appendChild(row);
   });
 }
-function changed(){syncLinks(room());draw();renderWalls();renderOpens();renderEdit();renderCalc();persist();}
+function changed(){syncLinks(room());draw();renderWalls();renderOpens();renderEdit();renderCalc();persist();if(tab==="b"){bInit();bRender();}}
 
 function refreshAll(){
   const r=room();
@@ -1484,7 +1484,7 @@ $("addSub").onclick=()=>{
   refreshAll();persist();setTool("wall");
   $("toolHint").textContent="Teilbereich angelegt: Zeichne die Ecken des Bads innerhalb des Raums (der graue Umriss ist der Hauptraum). Seine Fläche wird vom Hauptraum abgezogen.";
 };
-$("mat").onchange=()=>{lead(room()).mat=$("mat").value;$("paket").disabled=!!lead(room()).mat;renderMats();renderCalc();persist();};
+$("mat").onchange=()=>{lead(room()).mat=$("mat").value;$("paket").disabled=!!lead(room()).mat;renderMats();renderCalc();persist();if(tab==="b"){bInit();bRender();}};
 ["mName","mAuf"].forEach(i=>noCap($(i)));
 function matCheck(l,b,d){
   if(!(l>0)||!(b>0))return{t:"",w:[]};
@@ -1523,13 +1523,15 @@ function bHset(v){const sel=$("bH");if(![...sel.options].some(o=>o.value===Strin
 function fillBM(){const sel=$("bM"),g=bG(),cur=g.mat||"";sel.innerHTML='<option value="">Automatisch (Material der Räume)</option>'+(db.materials||[]).map(m=>`<option value="${m.id}">${esc(m.name)} (${f(Math.max(m.l,m.b))} × ${f(Math.min(m.l,m.b))} m)</option>`).join("")+'<option value="own">Eigene Eingabe</option>';sel.value=cur;}
 function bInit(){const g=bG();bSeen=proj;fillBM();$("bW").value=g.W;$("bL").value=g.L;$("bZ").value=g.Z;{const z0=Object.assign({l:5,r:5,t:5,b:5},g.za||{});["l","r","t","b"].forEach(k=>$("bZ"+k).value=z0[k]);}$("bD").value=g.dir+(g.fl?"1":"0");$("bS").value=g.st;$("bN").value=g.nd==null?20:g.nd;$("bNW").value=g.nw==null?1.6:g.nw;bHset(g.sh||8);}
 function bahnCalc(){
-  const g=bG(),z=g.Z/100;let W=g.W,LL=g.L,src="";
+  const g=bG();let z=g.Z/100,W=g.W,LL=g.L,src="";
   g.off=g.off||{};
   const all=proj.rooms.filter(r=>r.closed&&r.pts.length>2&&!r.parent);
   let rooms=g.view?all.filter(r=>r.id===g.view):all.filter(r=>!g.off[r.id]);
+  g.mid="";
   if(g.mat!=="own"){let m0=g.mat?db.materials.find(x=>x.id===g.mat):null;
     if(!m0){const cn={};rooms.forEach(r=>{const m=matOf(lead(r));if(m&&Math.max(m.l,m.b)>=5&&Math.min(m.l,m.b)>0)cn[m.id]=(cn[m.id]||0)+1;});const id=Object.keys(cn).sort((a,b)=>cn[b]-cn[a])[0];if(id)m0=db.materials.find(x=>x.id===id);}
-    if(m0&&Math.max(m0.l,m0.b)>=5&&Math.min(m0.l,m0.b)>0){W=Math.min(m0.l,m0.b);LL=Math.max(m0.l,m0.b);src=m0.name;}}
+    if(m0&&Math.max(m0.l,m0.b)>=5&&Math.min(m0.l,m0.b)>0){W=Math.min(m0.l,m0.b);LL=Math.max(m0.l,m0.b);src=m0.name;g.mid=m0.id;}}
+  const zp=(db.matZ&&g.mid&&db.matZ[g.mid])||null;if(zp&&zp.Z!=null)z=zp.Z/100;
   const P=[],info=[];let N=0;
   rooms.forEach(r=>{
     const dir=g.rd[r.id]||g.dir,fl=g.rf&&g.rf[r.id]!==undefined?g.rf[r.id]:!!g.fl,A=p=>dir==="y"?p.x:p.y,Lg=p=>dir==="y"?p.y:p.x;
@@ -1548,7 +1550,7 @@ function bahnCalc(){
       else ex.push({c0:Math.min(A(e1),A(e2)),c1:Math.max(A(e1),A(e2)),sd:nl>0?1:-1,t});
     });
     const al=(g.rs&&g.rs[r.id])||g.st;
-    const zr=Object.assign({l:5,r:5,t:5,b:5},g.za||{},(g.zr&&g.zr[r.id])||{}),q=k=>(+zr[k]||0)/100;
+    const zr=Object.assign({l:5,r:5,t:5,b:5},(zp&&zp.za)||g.za||{},(g.zr&&g.zr[r.id])||{}),q=k=>(+zr[k]||0)/100;
     let zA0=dir==="y"?q("l"):q("t"),zA1=dir==="y"?q("r"):q("b"),zE0=dir==="y"?q("t"):q("l"),zE1=dir==="y"?q("b"):q("r");
     const nn=!!g.nn[r.id];
     let sm=nn?[]:(g.sm[r.id]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
@@ -1592,7 +1594,7 @@ function bSel(R){
   const opts=R.all.map((n,i)=>`<option value="${i}"${g.view===R.allId[i]?" selected":""}>${esc(n)}</option>`).join("");
   return `<div class="box"><b>Räume für die Rolle</b> (antippen = ein/aus)<br>${chips}${proj.rooms.some(r=>r.closed&&r.parent)?"<br><small>Nicht enthalten (Teilbereiche): "+proj.rooms.filter(r=>r.closed&&r.parent).map(r=>esc(r.name)).join(", ")+"</small>":""}<br><button data-ball="1">Alle</button> <button data-btp="1">Nur Teppich</button><br><label>Ansicht<select data-bv="1"><option value="">Ganze Wohnung (gewählte Räume)</option>${opts}</select></label></div>`;
 }
-function bRender(){
+function bRender0(){
   const R=bahnCalc(),g=R.g,out=$("bOut");fillBM();$("bW").value=g.W;$("bL").value=g.L;
   if(!R.P.length){out.innerHTML=bSel(R)+'<p class="hint">Kein Raum ausgewählt oder noch kein geschlossener Raum gezeichnet.</p>';return;}
   const col=["#2a9d8f","#7b61c4","#d98a1c","#2368ad","#c0504d","#6a994e"],nm=[...new Set(R.P.map(p=>p.r))],cl=n=>col[nm.indexOf(n)%col.length];
@@ -1677,11 +1679,20 @@ $("bOut").onchange=e=>{const t=e.target;
   if(t.dataset.bza!==undefined){const[ii,sd]=t.dataset.bza.split("|"),I=bahnCalc().info[+ii],g=bG();g.zr=g.zr||{};const o=g.zr[I.id]=g.zr[I.id]||{};if(t.value==="")delete o[sd];else o[sd]=Math.max(0,parseFloat(t.value)||0);persist();bRender();return;}
   if(t.dataset.bal!==undefined){const g=bG(),I=bahnCalc().info[+t.dataset.bal];g.rs=g.rs||{};g.rs[I.id]=t.value;delete g.sm[I.id];persist();bRender();return;}
   if(t.dataset.bv!==undefined){const g=bG(),A=bahnCalc().allId;g.view=t.value===""?"":A[+t.value];persist();bRender();return;}if(t.dataset.bd===undefined)return;const g=bG(),I=bahnCalc().info[+t.dataset.bd];if(t.value[0]!==I.dir){delete g.sm[I.id];delete g.nn[I.id];}g.rd[I.id]=t.value[0];g.rf=g.rf||{};g.rf[I.id]=t.value[1]==="1";persist();bRender();};
-function bRead(){const g=bG();
+function bRender(){bRender0();syncZ();}
+function syncZ(){const g=bG(),p=db.matZ&&g.mid&&db.matZ[g.mid];if(!p)return;
+  const ids=["bZ","bZl","bZr","bZt","bZb"];if(ids.includes((document.activeElement||{}).id))return;
+  if(p.Z!=null)$("bZ").value=p.Z;["l","r","t","b"].forEach(k=>{if(p.za&&p.za[k]!=null)$("bZ"+k).value=p.za[k];});}
+function bRead(noSave){const g=bG();
   const nd=$("bD").value,od=g.dir+(g.fl?"1":"0");if(nd!==od){const ax=nd[0]!==g.dir;if(ax&&Object.keys(g.sm).length&&!confirm("Verlegerichtung für ALLE Räume ändern? Manuell gesetzte Nähte werden gelöscht.")){$("bD").value=od;return;}if(ax)g.sm={};g.dir=nd[0];g.fl=nd[1]==="1";g.rd={};g.rf={};}
-  if($("bS").value!==g.st)g.rs={};g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;{const v=parseFloat($("bZ").value);g.Z=isNaN(v)?5:Math.max(0,v);$("bZ").value=g.Z;g.za={};["l","r","t","b"].forEach(k=>{const w=parseFloat($("bZ"+k).value);g.za[k]=isNaN(w)?5:Math.max(0,w);$("bZ"+k).value=g.za[k];});}g.st=$("bS").value;if($("bH").value==="other"){const t=parseFloat(String(prompt("Streifenbreite in cm (1–30)")||"").replace(",","."));bHset(isNaN(t)?(g.sh||8):Math.min(30,Math.max(1,t)));}g.sh=parseFloat($("bH").value)||8;g.mat=$("bM").value;{const a=parseFloat($("bN").value),b=parseFloat($("bNW").value);g.nd=isNaN(a)?20:Math.max(0,a);g.nw=isNaN(b)?1.6:Math.max(0.5,b);}db.bahnDef={};BSET.forEach(k=>{db.bahnDef[k]=g[k];});persist();bRender();}
+  if($("bS").value!==g.st)g.rs={};g.W=parseFloat($("bW").value)||5;g.L=parseFloat($("bL").value)||22;{const v=parseFloat($("bZ").value);g.Z=isNaN(v)?5:Math.max(0,v);$("bZ").value=g.Z;g.za={};["l","r","t","b"].forEach(k=>{const w=parseFloat($("bZ"+k).value);g.za[k]=isNaN(w)?5:Math.max(0,w);$("bZ"+k).value=g.za[k];});}g.st=$("bS").value;if($("bH").value==="other"){const t=parseFloat(String(prompt("Streifenbreite in cm (1–30)")||"").replace(",","."));bHset(isNaN(t)?(g.sh||8):Math.min(30,Math.max(1,t)));}g.sh=parseFloat($("bH").value)||8;g.mat=$("bM").value;{const a=parseFloat($("bN").value),b=parseFloat($("bNW").value);g.nd=isNaN(a)?20:Math.max(0,a);g.nw=isNaN(b)?1.6:Math.max(0.5,b);}{const key=g.mat==="own"?"":(g.mat||g.mid||"");if(key&&noSave!==true){db.matZ=db.matZ||{};db.matZ[key]={Z:g.Z,za:Object.assign({},g.za)};}}
+db.bahnDef={};BSET.forEach(k=>{db.bahnDef[k]=g[k];});persist();bRender();}
 ["bW","bL"].forEach(i=>$(i).addEventListener("input",()=>{$("bM").value="own";}));
-$("bM").addEventListener("change",()=>{const m=(db.materials||[]).find(x=>x.id===$("bM").value);if(m){$("bW").value=Math.min(m.l,m.b);$("bL").value=Math.max(m.l,m.b);}bRead();});
+$("bM").addEventListener("change",()=>{const id=$("bM").value,m=(db.materials||[]).find(x=>x.id===id);
+  if(m){$("bW").value=Math.min(m.l,m.b);$("bL").value=Math.max(m.l,m.b);
+    const p=(db.matZ&&db.matZ[id])||{Z:5,za:{l:5,r:5,t:5,b:5}};
+    $("bZ").value=p.Z;["l","r","t","b"].forEach(k=>$("bZ"+k).value=p.za[k]);bRead();}
+  else bRead(true);});
 ["bW","bL","bZ","bZl","bZr","bZt","bZb","bN","bNW","bD","bS","bH"].forEach(i=>$(i).addEventListener("change",bRead));
 
 const ZS=[12.5,17.5,25,30,35,42,50,60,70,85,100,120,140,170,200];
