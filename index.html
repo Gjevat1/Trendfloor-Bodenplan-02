@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="058"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="059"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -1552,9 +1552,9 @@ function bahnCalc(){
     let zA0=dir==="y"?q("l"):q("t"),zA1=dir==="y"?q("r"):q("b"),zE0=dir==="y"?q("t"):q("l"),zE1=dir==="y"?q("b"):q("r");
     const nn=!!g.nn[r.id];
     let sm=nn?[]:(g.sm[r.id]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
-    {const rw=a1-a0;if(!nn&&!sm.length&&rw<=W+1e-9&&rw+zA0+zA1>W+1e-9){const f=Math.max(0,(W-rw)/(zA0+zA1));zA0*=f;zA1*=f;}}
+    {const rw=a1-a0;if(!nn&&!sm.length&&rw<=W+0.005&&rw+zA0+zA1>W+0.005){const f=Math.max(0,(W-rw)/(zA0+zA1));zA0*=f;zA1*=f;}}
     const man=sm.length>0||nn,needW=(a1-a0)+zA0+zA1;
-    if(!man&&(a1-a0)+zA0+zA1>W+1e-9){
+    if(!man&&(a1-a0)+zA0+zA1>W+0.005){
       let pos,first=true,n=0;
       if(al==="hi"){pos=a1;while(n++<50){if((pos-a0)+zA0+(first?zA1:z)<=W+1e-9)break;pos-=Math.max(0.1,W-(first?zA1:z)-z);sm.push(pos);first=false;}}
       else{pos=a0;while(n++<50){if((a1-pos)+(first?zA0:z)+zA1<=W+1e-9)break;pos+=Math.max(0.1,W-(first?zA0:z)-z);sm.push(pos);first=false;}}
@@ -1570,7 +1570,7 @@ function bahnCalc(){
         [c0,c1].forEach(c=>{if((a-c)*(b-c)<0)add(l+(m-l)*(c-a)/(b-a));});});
       if(hi<lo)continue;
       ex.forEach(e=>{if(e.c1>c0&&e.c0<c1){if(e.sd>0)hi+=e.t;else lo-=e.t;}});
-      N++;P.push({n:N,r:r.name,k:k+1,nb,d:dir==="y",ar:dir==="y"?(fl?"↓":"↑"):(fl?"←":"→"),w:pr-pl,L:hi-lo+zE0+zE1,a:[pl,pr],l:[lo-zE0,hi+zE1],over:pr-pl>W+1e-6});
+      N++;P.push({n:N,r:r.name,k:k+1,nb,d:dir==="y",ar:dir==="y"?(fl?"↓":"↑"):(fl?"←":"→"),w:pr-pl,L:hi-lo+zE0+zE1,a:[pl,pr],l:[lo-zE0,hi+zE1],over:pr-pl>W+0.005});
     }
     const st0=Math.max(0.1,W-2*z),sn=[];
     snp.forEach(v=>sn.push({v,k:"Tür"}));
