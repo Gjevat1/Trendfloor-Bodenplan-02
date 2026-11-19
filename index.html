@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="057"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="058"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -1549,9 +1549,10 @@ function bahnCalc(){
     });
     const al=(g.rs&&g.rs[r.id])||g.st;
     const zr=Object.assign({l:5,r:5,t:5,b:5},g.za||{},(g.zr&&g.zr[r.id])||{}),q=k=>(+zr[k]||0)/100;
-    const zA0=dir==="y"?q("l"):q("t"),zA1=dir==="y"?q("r"):q("b"),zE0=dir==="y"?q("t"):q("l"),zE1=dir==="y"?q("b"):q("r");
+    let zA0=dir==="y"?q("l"):q("t"),zA1=dir==="y"?q("r"):q("b"),zE0=dir==="y"?q("t"):q("l"),zE1=dir==="y"?q("b"):q("r");
     const nn=!!g.nn[r.id];
     let sm=nn?[]:(g.sm[r.id]||[]).filter(v=>v>a0+0.05&&v<a1-0.05).sort((a,b)=>a-b);
+    {const rw=a1-a0;if(!nn&&!sm.length&&rw<=W+1e-9&&rw+zA0+zA1>W+1e-9){const f=Math.max(0,(W-rw)/(zA0+zA1));zA0*=f;zA1*=f;}}
     const man=sm.length>0||nn,needW=(a1-a0)+zA0+zA1;
     if(!man&&(a1-a0)+zA0+zA1>W+1e-9){
       let pos,first=true,n=0;
