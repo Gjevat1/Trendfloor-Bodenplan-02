@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="055"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="057"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -1615,8 +1615,13 @@ function bRender(){
   const nIn=R.info.reduce((a,i)=>a+i.seams.length,0);
   s1+="</svg></div>";
   const sh=(g.sh||8)/100,rs=32,RH=Math.max(R.used,g.L),tw=g.W*rs;
+  const endO=R.used<g.L-0.1?{n:0,lb:"Ende",L:g.L-R.used,w:g.W,r:"Rollenende"}:null;
+  const OO=endO?[...R.O,endO]:R.O,strips=[];
+  OO.forEach(o=>{const n=Math.floor(o.w/sh+1e-9);for(let j=0;j<n;j++)strips.push({lb:o.lb||"R"+o.n,r:o.r,rem:o.L,L:o.L,o,j});});
+  const avail=strips.reduce((a,x)=>a+x.rem,0),needs=R.info.map(i=>({r:i.r,n:i.sock})).sort((a,b)=>b.n-a.n);
+  needs.forEach(nd=>{let rm=nd.n;const mp={},pick=x=>{if(rm<=1e-6||x.rem<=1e-6)return;const u=Math.min(rm,x.rem);x.rem-=u;rm-=u;mp[x.lb]=(mp[x.lb]||0)+u;};strips.filter(x=>x.r===nd.r).forEach(pick);strips.filter(x=>x.r!==nd.r).forEach(pick);nd.got=Object.keys(mp).map(k=>k+": "+f(mp[k])+" m").join(", ");nd.miss=rm;});
   let s2=`<svg width="100%" viewBox="0 0 ${F(tw+80)} ${F(RH*rs+20)}"><rect x="10" y="10" width="${F(tw)}" height="${F(RH*rs)}" fill="#f7f9fc" stroke="#8aa0b8"/>`,yy=0,area=0;
-  const rest=(x,y,o)=>{o.x=x;o.y=y;let t=`<rect x="${F(x)}" y="${F(y)}" width="${F(o.w*rs)}" height="${F(o.L*rs)}" fill="#e6ebf1" stroke="#8aa0b8" stroke-dasharray="4 3"/>`;{const k=Math.floor(o.w/sh+1e-9);for(let j=1;j<k;j++)t+=`<line x1="${F(x+j*sh*rs)}" y1="${F(y)}" x2="${F(x+j*sh*rs)}" y2="${F(y+o.L*rs)}" stroke="#d98a1c" stroke-width="0.8"/>`;}
+  const rest=(x,y,o)=>{o.x=x;o.y=y;let t=`<rect x="${F(x)}" y="${F(y)}" width="${F(o.w*rs)}" height="${F(o.L*rs)}" fill="#e6ebf1" stroke="#8aa0b8" stroke-dasharray="4 3"/>`;{strips.filter(z=>z.o===o).forEach(z=>{const u=z.L-z.rem;if(u>1e-6)t+=`<rect x="${F(x+z.j*sh*rs)}" y="${F(y)}" width="${F(sh*rs)}" height="${F(u*rs)}" fill="#f4a62a88" stroke="#d98a1c" stroke-width="0.8"/>`;});}
     if(o.w*rs>28&&o.L*rs>24)t+=`<text x="${F(x+o.w*rs/2)}" y="${F(y+o.L*rs/2-3)}" font-size="11" font-weight="700" text-anchor="middle" fill="#5a6b80">${o.lb||"R"+o.n}</text><text x="${F(x+o.w*rs/2)}" y="${F(y+o.L*rs/2+10)}" font-size="9" text-anchor="middle" fill="#5a6b80">${f(o.L)} × ${f(o.w)}</text>`;return t;};
   R.rows.forEach(row=>{let xx=0;row.items.forEach(p=>{area+=p.w*p.L;
     s2+=`<rect x="${F(10+xx*rs)}" y="${F(10+yy*rs)}" width="${F(p.w*rs)}" height="${F(p.L*rs)}" fill="${cl(p.r)}33" stroke="${cl(p.r)}"/>`;
@@ -1625,7 +1630,6 @@ function bRender(){
     xx+=p.w;});
     if(row.fr)s2+=rest(10+xx*rs,10+yy*rs,row.fr);
     yy+=row.len;s2+=`<text x="${F(tw+16)}" y="${F(10+yy*rs)}" font-size="10" fill="#5a6b80" dominant-baseline="central">${f(yy)} m</text>`;});
-  const endO=R.used<g.L-0.1?{n:0,lb:"Ende",L:g.L-R.used,w:g.W,r:"Rollenende"}:null;
   if(endO)s2+=rest(10,10+R.used*rs,endO);
   s2+="</svg>";
   const left=g.L-R.used,fill=R.used>0?area/(R.used*g.W)*100:0;
@@ -1635,12 +1639,8 @@ function bRender(){
   let cum=0;const calcRows=R.rows.map((row,k)=>{cum+=row.len;return `<tr><td>${k+1}</td><td>${row.items.map(p=>esc(p.r)+(p.nb>1?" (Bahn "+p.k+"/"+p.nb+")":"")+" "+f(p.w)+" m").join(" + ")}</td><td>${f(row.len)}</td><td>${f(cum)}</td></tr>`;}).join("");
   const calcRest=R.rows.map((row,k)=>row.free>0.1?`Reihe ${k+1}: ${f(row.free)} m breit × ${f(row.len)} m`:"").filter(Boolean).join("<br>");
   const calcH=`<div style="overflow-x:auto"><table class="bt"><tr><th>Reihe</th><th>Bahnen (Breite)</th><th>Länge m</th><th>Summe m</th></tr>${calcRows}</table></div><p class="box"><b>Rolle ${f(g.L)} m − Verbrauch ${f(R.used)} m = ${left>=0?"Rest "+f(left)+" m":"⚠ es fehlen "+f(-left)+" m"}</b>${calcRest?"<br>Reststreifen neben den Bahnen (z. B. Sockel):<br>"+calcRest:""}<br><small>Türnaht: unter dem Türblatt. Der Raum, in den die Tür aufgeht, endet an der Wandkante; der andere Teppich läuft durch die Wandstärke.</small></p>`;
-  const OO=endO?[...R.O,endO]:R.O,strips=[];
-  OO.forEach(o=>{const n=Math.floor(o.w/sh+1e-9);for(let j=0;j<n;j++)strips.push({lb:o.lb||"R"+o.n,r:o.r,rem:o.L});});
-  const avail=strips.reduce((a,x)=>a+x.rem,0),needs=R.info.map(i=>({r:i.r,n:i.sock})).sort((a,b)=>b.n-a.n);
-  needs.forEach(nd=>{let rm=nd.n;const mp={},pick=x=>{if(rm<=1e-6||x.rem<=1e-6)return;const u=Math.min(rm,x.rem);x.rem-=u;rm-=u;mp[x.lb]=(mp[x.lb]||0)+u;};strips.filter(x=>x.r===nd.r).forEach(pick);strips.filter(x=>x.r!==nd.r).forEach(pick);nd.got=Object.keys(mp).map(k=>k+": "+f(mp[k])+" m").join(", ");nd.miss=rm;});
   const need=R.info.reduce((a,i)=>a+i.sock,0);
-  const sockH=`<p class="box">Wandsockel (an die Wand geklebt), Streifenbreite ${f(sh*100,1)} cm. Die Streifen sind auf den Resten der Rolle als orange Linien eingezeichnet.<br>${needs.map(nd=>`<b>${esc(nd.r)}</b>: Bedarf ${f(nd.n)} lfm → ${nd.got||"–"}${nd.miss>0.01?" <b>⚠ es fehlen "+f(nd.miss)+" lfm</b>":" ✓"}`).join("<br>")}<br><b>Bedarf gesamt: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b></p>`;
+  const sockH=`<p class="box">Wandsockel (an die Wand geklebt), Streifenbreite ${f(sh*100,1)} cm. Orange eingezeichnet ist nur die Menge, die für das Projekt gebraucht wird.<br>${needs.map(nd=>`<b>${esc(nd.r)}</b>: Bedarf ${f(nd.n)} lfm → ${nd.got||"–"}${nd.miss>0.01?" <b>⚠ es fehlen "+f(nd.miss)+" lfm</b>":" ✓"}`).join("<br>")}<br><b>Bedarf gesamt: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b></p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
   const ctl=R.info.map((i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||(i.nn?"keine Naht (von dir festgelegt)":"keine Naht");
     return `<div class="box"><b>${esc(i.r)}</b> · quer zur Bahn ${f(i.a1-i.a0)} m${i.nich?" (mit Balkontür-Nische)":""} · Rolle ${f(g.W)} m · ${i.seams.length} Naht${i.seams.length===1?"":"e"}<br><label>Verlegerichtung<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select></label><div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">${[["l","links"],["r","rechts"],["t","oben"],["b","unten"]].map(o=>`<label style="flex:1;min-width:70px;font-size:.85rem">Zugabe ${o[1]} (cm)<input type="number" min="0" step="0.5" inputmode="decimal" data-bza="${ii}|${o[0]}" value="${i.own[o[0]]==null?"":i.own[o[0]]}" placeholder="${f(i.zr[o[0]],1)}" style="min-height:48px;font-size:1rem"></label>`).join("")}</div><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}${!i.man&&i.seams.length?` <small style="color:#5a6b80">– Grund: Raumbreite${i.nich?" inkl. Balkontür-Nische":""} + Zugabe = ${f(i.needW)} m, Rolle nur ${f(g.W)} m</small>`:""}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?`${i.nn?"":` <button data-bn="${ii}">Keine Naht</button>`} <button data-bz="${ii}">Zurück zum Vorschlag</button>`:i.seams.length?` <button data-bn="${ii}">Vorschlag entfernen</button> <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}</div>`;}).join("");
