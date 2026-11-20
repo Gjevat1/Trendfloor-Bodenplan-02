@@ -356,7 +356,7 @@ input,select{min-height:46px}
   </aside>
 </div>
 <script>
-const APP_VERSION="060"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="061"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -1663,7 +1663,7 @@ $("bOut").onclick=e=>{
   if(D.btp!==undefined){const tpn=proj.rooms.filter(r=>r.closed&&!r.parent&&/teppich/i.test(lead(r).belag||r.belag||"")).map(r=>r.id);g.off={};g.view="";if(tpn.length)R.allId.forEach(n=>{if(!tpn.includes(n))g.off[n]=true;});persist();bRender();return;}
   if(D.bt!==undefined){bTap=+D.bt;bRender();return;}
   if(D.bc!==undefined){bTap=null;bRender();return;}
-  if(D.bm!==undefined){const I=R.info[+D.bm],t=prompt("Naht: Abstand von "+(I.dir==="y"?"links":"oben")+" in m (z. B. 2,40)");const v=parseFloat(String(t||"").replace(",","."));if(isNaN(v))return;bAdd(I,I.ao+v);return;}
+  if(D.bm!==undefined){const I=R.info[+D.bm],t=prompt("Naht: Abstand von "+(I.dir==="y"?"links":"oben")+" (Raumkante) bis zur Naht. Eingabe in m (1,98) oder cm (198). Gültig: "+f(I.a0-I.ao)+" bis "+f(I.a1-I.ao)+" m");let v=parseFloat(String(t||"").replace(",","."));if(isNaN(v))return;if(v>=20)v=v/100;bAdd(I,I.ao+v);return;}
   if(D.ba!==undefined){const I=R.info[+D.ba];g.sm[I.id]=I.seams.slice();delete g.nn[I.id];}
   if(D.bn!==undefined){const I=R.info[+D.bn];delete g.sm[I.id];g.nn[I.id]=true;}
   if(D.bz!==undefined){const I=R.info[+D.bz];delete g.sm[I.id];delete g.nn[I.id];}
