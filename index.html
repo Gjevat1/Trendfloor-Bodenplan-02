@@ -176,6 +176,7 @@ details.sub{letter-spacing:normal;text-transform:none;white-space:normal;font-si
 .card{border:1px solid var(--line);box-shadow:none;border-radius:12px;padding:16px;background:var(--paper)}
 h2{font-size:1.3rem;font-weight:700;color:var(--navy)}
 details.fold>summary{font-size:1.25rem;color:var(--navy)}
+#bSet>summary{font-size:1.05rem;min-height:48px;border-top:1px solid var(--line)}
 button{border-radius:10px;border-color:#b6c2d6;font-weight:600}
 button.primary{background:var(--navy);border-color:var(--navy);color:#fff}
 .wide{background:var(--soft);color:var(--navy);border-color:#b6c2d6}
@@ -313,6 +314,7 @@ canvas{border-radius:8px;border-color:#b6c2d6}
 
 <section id="bCard" class="card" data-tab="b">
   <h2>Bahnen &amp; Zuschnitt</h2>
+  <details id="bSet" class="fold" open><summary>Einstellungen</summary>
   <p class="hint">Berücksichtigt Räume mit Belag „Teppich“ (sonst alle Räume).</p>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     <label>Rolle aus Material<select id="bM"></select></label>
@@ -326,6 +328,7 @@ canvas{border-radius:8px;border-color:#b6c2d6}
   </div>
   <label>Wandsockel: Streifenbreite (cm)<select id="bH"><option value="6">6</option><option value="8">8</option><option value="10">10</option><option value="12">12</option><option value="other">andere …</option></select></label>
     <label>Nahtvorschlag für alle Räume<select id="bS"><option value="lo">links / oben bündig</option><option value="hi">rechts / unten bündig</option></select></label>
+  </details>
   <div id="bOut"></div>
 </section>
 
@@ -419,7 +422,7 @@ canvas{border-radius:8px;border-color:#b6c2d6}
   </aside>
 </div>
 <script>
-const APP_VERSION="064"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="065"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -800,7 +803,7 @@ const ribGo=e=>{if(!e)return;if(e.tagName==="DETAILS")e.open=true;e.scrollIntoVi
 const RIB={w:[["✎ Wand","t:tWall"],["✥ Bearbeiten","t:tEdit"],["Zwischenwand","t:tSplit"],["⟂ Geradeziehen",()=>straightenAll()]],
 o:[["Tür","t:tDoor"],["Doppeltür","t:tDoor2"],["Fenster","t:tWindow"],["Balkontür","t:tBalcony"],["Durchgang","t:tGap"],["Doppelte Türen bereinigen",mergeBtn]],
 m:[["Belag","g:fBelag"],["Materialdatenbank","g:fMat"],["Neues Material","g:newMat"]],
-b:[["Einstellungen","g:bCard"],["Nähte","d:naht"],["Zuschnittliste","d:liste"],["Reststücke","d:rest"],["Sockel aus Resten","d:sock"]],
+b:[["Einstellungen","g:bSet"],["Nähte","d:naht"],["Zuschnittliste","d:liste"],["Reststücke","d:rest"],["Sockel aus Resten","d:sock"]],
 a:[["Ergebnis","g:fRes"],["Baustelle gesamt","g:fSum"]]};
 function ribSync(){document.querySelectorAll("#ribbon button[data-tid]").forEach(b=>b.classList.toggle("active",$(b.dataset.tid).classList.contains("active")));}
 function ribBuild(t){
