@@ -226,6 +226,23 @@ canvas{border-radius:8px;border-color:#b6c2d6}
 .sp-go{background:var(--zoll);border-color:#d9aa00;color:var(--navy);box-shadow:none;font-family:var(--fz);font-size:1.2rem}
 .sp-foot{color:var(--mut)}
 @media (prefers-reduced-motion:reduce){*{transition:none!important}}
+
+/* ---- Darstellung: Größe und Schriftart einstellbar ---- */
+:root{--u:1}
+html[data-ui]{font-size:calc(15px*var(--u))}
+html[data-ui] button,html[data-ui] input,html[data-ui] select{min-height:calc(52px*var(--u))}
+html[data-ui] textarea{min-height:calc(84px*var(--u))}
+html[data-ui] input[type=checkbox]{width:calc(26px*var(--u));height:calc(26px*var(--u));min-height:0}
+html[data-ui] .tabbar button{min-height:calc(60px*var(--u))}
+html[data-ui] .ribbon button{min-height:calc(44px*var(--u))}
+html[data-ui] .topbtn{min-height:calc(50px*var(--u))}
+html[data-ui] .iconbtn{width:calc(54px*var(--u))}
+html[data-ui] #newMat input,html[data-ui] #newMat select,html[data-ui] #newMat textarea,html[data-ui] #mats input,html[data-ui] #mats select,html[data-ui] #mats textarea{min-height:calc(56px*var(--u))}
+html[data-ui] .tapSheet button{min-height:calc(50px*var(--u))}
+html[data-ff="arial"] body{font-family:Arial,Helvetica,sans-serif}
+html[data-ff="verdana"] body{font-family:Verdana,Geneva,sans-serif}
+html[data-ff="georgia"] body{font-family:Georgia,"Times New Roman",serif}
+html[data-ff="trebuchet"] body{font-family:"Trebuchet MS","Segoe UI",sans-serif}
 </style>
 </head>
 <body>
@@ -420,6 +437,9 @@ canvas{border-radius:8px;border-color:#b6c2d6}
     <button id="newProject" class="primary">+ Neue Baustelle</button>
     <h3>Anzeige</h3>
     <button id="hintBtn2">ℹ Hinweise ausblenden</button>
+    <label>Schriftgröße und Buttons<select id="uiSize"><option value="75">Sehr klein (75 %)</option><option value="85">Klein (85 %)</option><option value="92">Etwas kleiner (92 %)</option><option value="100">Normal (100 %)</option><option value="115">Groß (115 %)</option><option value="130">Sehr groß (130 %)</option></select></label>
+    <label>Schriftart<select id="uiFont"><option value="sys">Standard (Roboto)</option><option value="arial">Arial</option><option value="verdana">Verdana (breit, gut lesbar)</option><option value="georgia">Georgia (mit Serifen)</option><option value="trebuchet">Trebuchet</option></select></label>
+    <button id="uiReset">Darstellung zurücksetzen</button>
     <h3>Sicherung</h3>
     <button id="backup">Sicherung als Datei speichern</button>
     <button id="import">Sicherung aus Datei laden</button>
@@ -430,8 +450,19 @@ canvas{border-radius:8px;border-color:#b6c2d6}
   </aside>
 </div>
 <script>
-const APP_VERSION="069"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="070"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
+const UIKEY="bpUI";
+function uiLoad(){try{return Object.assign({sz:100,ff:"sys"},JSON.parse(localStorage.getItem(UIKEY)||"{}"));}catch(e){return{sz:100,ff:"sys"};}}
+function uiApply(u){const h=document.documentElement;
+  if(u.sz===100&&u.ff==="sys"){h.removeAttribute("data-ui");h.removeAttribute("data-ff");h.style.removeProperty("--u");}
+  else{h.setAttribute("data-ui","1");h.style.setProperty("--u",String(u.sz/100));if(u.ff&&u.ff!=="sys")h.setAttribute("data-ff",u.ff);else h.removeAttribute("data-ff");}}
+function uiSave(u){try{localStorage.setItem(UIKEY,JSON.stringify(u));}catch(e){}}
+uiApply(uiLoad());
+{const u=uiLoad();$("uiSize").value=String(u.sz);$("uiFont").value=u.ff;
+  $("uiSize").onchange=()=>{const n=uiLoad();n.sz=+$("uiSize").value;uiSave(n);uiApply(n);};
+  $("uiFont").onchange=()=>{const n=uiLoad();n.ff=$("uiFont").value;uiSave(n);uiApply(n);};
+  $("uiReset").onclick=()=>{const n={sz:100,ff:"sys"};uiSave(n);uiApply(n);$("uiSize").value="100";$("uiFont").value="sys";};}
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
 const W=800,H=800;
