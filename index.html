@@ -91,6 +91,11 @@ th:first-child,td:first-child{text-align:left}
 tfoot td{font-weight:700;border-top:2px solid var(--blue)}
 .tscroll{overflow-x:auto}
 .drawer{position:fixed;inset:0;z-index:50;display:none}
+.tapSheet{position:fixed;left:0;right:0;bottom:0;z-index:60;background:#fff;border-top:2px solid #2368ad;border-radius:18px 18px 0 0;box-shadow:0 -8px 24px #0003;padding:12px 14px calc(14px + env(safe-area-inset-bottom,0px));display:flex;flex-wrap:wrap;gap:8px}
+.tapSheet[hidden]{display:none}
+.tapSheet .tsT{width:100%;font-weight:700;font-size:1.05rem;padding:2px 2px 6px}
+.tapSheet button{flex:1 1 30%;min-height:50px;font-size:1rem}
+.tapSheet button.danger{color:#b3261e}
 .drawer.open{display:block}
 .drawer .bk{position:absolute;inset:0;background:rgba(20,28,45,.45)}
 .dpanel{position:absolute;left:0;top:0;bottom:0;width:88%;max-width:430px;background:#fff;overflow:auto;padding:18px}
@@ -287,6 +292,7 @@ canvas{border-radius:8px;border-color:#b6c2d6}
     <button id="tGap" data-tab="o"><span class="dot" style="background:#7c5cbf"></span>Durchgang</button>
   </div>
   <div id="editBar" class="tools"></div>
+<div id="tapSheet" class="tapSheet" hidden></div>
   <div id="oSizeBox" class="g2" data-tab="o"><label>Größe<select id="oSize"></select></label><label>Breite (m)<input id="oW" type="number" step="0.01" min="0.1" inputmode="decimal"></label></div>
   <div class="g3"><button id="undo">↶ Zurück</button><button id="close">Raum schließen</button><button id="clear" class="danger">Neu zeichnen</button></div>
   <canvas id="plan"></canvas>
@@ -422,7 +428,7 @@ canvas{border-radius:8px;border-color:#b6c2d6}
   </aside>
 </div>
 <script>
-const APP_VERSION="067"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="068"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 document.querySelectorAll(".verTxt").forEach(e=>e.textContent=APP_VERSION);
 const KEY="trendfloor_bodenplan_v2";
@@ -824,6 +830,7 @@ $("tWall").parentElement.style.display="none";
 new MutationObserver(ribSync).observe($("tWall").parentElement,{subtree:true,attributes:true,attributeFilter:["class"]});
 window.addEventListener("resize",()=>{$("ribbon").style.top=$("tabs").offsetHeight+"px";});
 function setTab(t){
+  $("tapSheet").hidden=true;
   tab=t;
   if(t==="b"){bInit();bRender();}
   document.querySelectorAll("[data-tab]").forEach(e=>{e.style.display=e.dataset.tab.split(" ").includes(t)?"":"none";});
@@ -843,7 +850,7 @@ function fillSize(){
   sl.value=curW(tool);$("oW").value=curW(tool);
 }
 function setTool(t){
-  tool=t;auto=false;
+  tool=t;auto=false;$("tapSheet").hidden=true;
   [["gap","tGap"],["wall","tWall"],["edit","tEdit"],["split","tSplit"],["door","tDoor"],["door2","tDoor2"],["window","tWindow"],["balcony","tBalcony"]].forEach(([k,id])=>$(id).classList.toggle("active",k===t));
   if(t!=="edit")sel=null;
   pend=null;
@@ -1122,8 +1129,10 @@ function editDown(e){
     }
   }
   renderEdit();draw();
+  if(!drag)tapMenu();
 }
 function renderEdit(){
+  if(!(tool==="edit"&&sel&&selValid()&&sel.t!=="v"))$("tapSheet").hidden=true;
   const bar=$("editBar");bar.innerHTML="";
   {const sw=sel&&sel.t==="w"&&selValid()?room().pts[sel.i]:null;$("wKind").value=sw&&sw.wk||"";$("wThick").value=sw&&sw.wt||"";}
   const add=(t,fn,cls)=>{const b=document.createElement("button");b.textContent=t;if(cls)b.className=cls;b.onclick=fn;bar.appendChild(b);};
@@ -1135,6 +1144,54 @@ function renderEdit(){
   else if(sel.t==="s"){add("Teilwand löschen",()=>{snap();room().stubs.splice(i,1);sel=null;changed();},"danger");}
   else if(sel.t==="o"){const o=sel.o;add(OT[o.type].n+" löschen",()=>{snap();unlink(o);room().openings=room().openings.filter(x=>x!==o);sel=null;changed();},"danger");}
   else add("Ecke löschen",()=>deleteVertex(i),"danger");
+}
+
+/* ---------- Tipp-Menü: Bearbeiten / Löschen / Abbrechen ---------- */
+function tapMenu(){
+  if(tool==="edit"&&sel&&selValid()&&sel.t!=="v")showTapSheet("main");else $("tapSheet").hidden=true;
+}
+function closeTap(){$("tapSheet").hidden=true;}
+function askNum(txt,def){
+  const t=prompt(txt,String(def).replace(".",","));if(t===null)return null;
+  let v=parseFloat(String(t).replace(",","."));if(isNaN(v)||v<0)return null;
+  if(v>=30)v=v/100;return v;
+}
+function showTapSheet(mode){
+  const sh=$("tapSheet"),r=room();sh.innerHTML="";sh.hidden=false;
+  const add=(t,fn,cls)=>{const b=document.createElement("button");b.textContent=t;if(cls)b.className=cls;b.onclick=fn;sh.appendChild(b);};
+  const title=document.createElement("div");title.className="tsT";sh.appendChild(title);
+  const after=()=>{changed();if(sel&&selValid())showTapSheet("edit");else closeTap();};
+  const cancel=()=>{sel=null;closeTap();draw();renderEdit();};
+  let kind="",doDelete=null;
+  if(sel.t==="o"){
+    const o=sel.o,q=openRect(r,o);
+    kind=OT[o.type].n;title.textContent=kind+" · Wand "+(q.i+1)+" · "+f(q.w)+" m breit";
+    doDelete=()=>{snap();unlink(o);r.openings=r.openings.filter(x=>x!==o);sel=null;changed();closeTap();};
+    if(mode==="edit"){
+      if(o.type==="door"||o.type==="door2"||o.type==="balcony")add("↔ Richtung umdrehen ("+((o.dir||"in")==="in"?"innen → außen":"außen → innen")+")",()=>{snap();o.dir=(o.dir||"in")==="in"?"out":"in";after();});
+      if(o.type==="door"||(o.type==="balcony"&&q.w<1.4))add("⇄ Anschlag wechseln",()=>{snap();o.hinge=(o.hinge||"l")==="l"?"r":"l";after();});
+      add("Breite ändern …",()=>{const v=askNum("Neue Breite in m (z. B. 0,90)",q.w.toFixed(2));if(v&&v>=0.3){snap();o.w=v;after();}});
+      add("Position ändern …",()=>{const v=askNum("Abstand ab Wandanfang in m",q.s.toFixed(2));if(v!==null){snap();o.pos=v;after();}});
+      add("‹ Zurück",()=>showTapSheet("main"));
+      return;
+    }
+  }else if(sel.t==="w"){
+    const n=r.pts.length,i=sel.i,A=r.pts[i],B=r.pts[(i+1)%n],L=Math.hypot(B.x-A.x,B.y-A.y);
+    kind="Wand";title.textContent="Wand "+(i+1)+" · "+f(L)+" m"+(A.wt?" · "+f(A.wt*100,1)+" cm stark":"");
+    doDelete=()=>{deleteWall(i);sel=null;closeTap();};
+    if(mode==="edit"){
+      add("Länge ändern …",()=>{const v=askNum("Neue Wandlänge in m",L.toFixed(2));if(v&&v>=0.1){const mv=(r.closed&&i===n-1)?A:B,fx=mv===B?A:B,d=Math.hypot(mv.x-fx.x,mv.y-fx.y);if(d<0.01)return;snap();mv.x=fx.x+(mv.x-fx.x)/d*v;mv.y=fx.y+(mv.y-fx.y)/d*v;after();}});
+      add("Stärke ändern …",()=>{const v=askNum("Wandstärke in cm (z. B. 25)",A.wt?(A.wt*100).toFixed(1):"");if(v&&v>0){snap();A.wt=v>=1?v/100:v;after();}});
+      add("‹ Zurück",()=>showTapSheet("main"));
+      return;
+    }
+  }else{
+    kind="Teilwand";title.textContent="Teilwand";
+    doDelete=()=>{snap();r.stubs.splice(sel.i,1);sel=null;changed();closeTap();};
+  }
+  if(sel.t!=="s")add("Bearbeiten",()=>showTapSheet("edit"));
+  add("Löschen",()=>{if(confirm(kind+" wirklich löschen?"))doDelete();},"danger");
+  add("Abbrechen",cancel);
 }
 function axisWall(i,horiz){
   const r=room(),n=r.pts.length,A=r.pts[i],B=r.pts[(i+1)%n],mv=(r.closed&&i===n-1)?A:B,fx=mv===B?A:B;
@@ -1499,7 +1556,7 @@ canvas.addEventListener("pointermove",e=>{
 const endDrag=()=>{
   if(!drag)return;
   const m=drag.moved;drag=null;
-  if(m)changed();else{renderEdit();draw();}
+  if(m)changed();else{renderEdit();draw();tapMenu();}
 };
 canvas.addEventListener("pointerup",endDrag);
 canvas.addEventListener("pointercancel",endDrag);
