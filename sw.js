@@ -1,5 +1,5 @@
-// Offline-Speicher der App (Version 068). Bei jeder neuen Version die Zahl erhöhen.
-const CACHE = "bodenplan-068";
+// Offline-Speicher der App (Version 069). Bei jeder neuen Version die Zahl erhöhen.
+const CACHE = "bodenplan-069";
 const FILES = ["./", "./index.html", "./manifest.webmanifest", "./icon-192.png", "./icon-512.png"];
 self.addEventListener("install", e => {
   e.waitUntil(caches.open(CACHE).then(c => c.addAll(FILES)).then(() => self.skipWaiting()));
