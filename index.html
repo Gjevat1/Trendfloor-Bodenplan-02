@@ -275,6 +275,16 @@ html[data-ff="trebuchet"] body{font-family:"Trebuchet MS","Segoe UI",sans-serif}
 .rb-sec button:only-child{grid-column:1/-1}
 html[data-ui] .rb-grid .rb-card input{min-height:0}
 html[data-ui] .rb-tile{min-height:0}
+
+.rb-row{display:grid;grid-template-columns:1fr auto 118px auto;gap:8px;align-items:center;margin:8px 0}
+.rb-bn b{display:block;font-size:1.02rem}
+.rb-bn small{display:block;color:var(--mut);font-size:.8rem}
+.rb-pm{min-height:0!important;width:46px;height:46px;padding:0!important;border-radius:14px!important;background:#fff;font-size:1.3rem}
+.rb-row .rb-w{padding:8px 12px}
+.rb-row .rb-w input{border:0;background:transparent;padding:0;min-height:0;height:auto;font-size:1.15rem;font-weight:600;width:calc(100% - 20px)}
+.rb-rest{grid-column:2/5;text-align:right;font-weight:600;color:var(--mut);padding-right:6px}
+html[data-ui] .rb-row .rb-w input{min-height:0}
+html[data-ui] .rb-pm{min-height:0}
 </style>
 </head>
 <body>
@@ -482,7 +492,7 @@ html[data-ui] .rb-tile{min-height:0}
   </aside>
 </div>
 <script>
-const APP_VERSION="072"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="073"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 const UIKEY="bpUI";
 function uiLoad(){try{return Object.assign({sz:100,ff:"sys"},JSON.parse(localStorage.getItem(UIKEY)||"{}"));}catch(e){return{sz:100,ff:"sys"};}}
@@ -1856,6 +1866,14 @@ function bRender0(){
   const need=R.info.reduce((a,i)=>a+i.sock,0);
   const sockH=`<p class="box">Wandsockel (an die Wand geklebt), Streifenbreite ${f(sh*100,1)} cm. Orange eingezeichnet ist nur die Menge, die für das Projekt gebraucht wird.<br>${needs.map(nd=>`<b>${esc(nd.r)}</b>: Bedarf ${f(nd.n)} lfm → ${nd.got||"–"}${nd.miss>0.01?" <b>⚠ es fehlen "+f(nd.miss)+" lfm</b>":" ✓"}`).join("<br>")}<br><b>Bedarf gesamt: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b></p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
+  const bahnRows=(i,ii)=>{
+    if(!i.seams.length)return "";
+    const e=[i.a0,...i.seams,i.a1],P=R.P.filter(p=>p.r===i.r);
+    const rows=e.slice(0,-1).map((x,k)=>{const w=e[k+1]-x,last=k===e.length-2,p=P.find(q=>q.k===k+1),cw=p?p.w:null,bad=p&&p.over;
+      const info=`<small${bad?' style="color:#b3261e"':""}>Zuschnitt ${cw==null?"–":f(cw)} m${bad?" ⚠ breiter als Rolle":""}</small>`;
+      return last?`<div class="rb-row"><div class="rb-bn"><b>Bahn ${k+1}</b>${info}</div><div class="rb-rest">Rest · ${f(w)} m</div></div>`
+        :`<div class="rb-row"><div class="rb-bn"><b>Bahn ${k+1}</b>${info}</div><button class="rb-pm" data-bwm="${ii}|${k}|-1" aria-label="1 cm schmaler">−</button><label class="rb-card rb-w"><input type="number" step="0.01" min="0.1" inputmode="decimal" data-bw="${ii}|${k}" value="${w.toFixed(2)}"><b>m</b></label><button class="rb-pm" data-bwm="${ii}|${k}|1" aria-label="1 cm breiter">＋</button></div>`;}).join("");
+    return `<div class="rb-lab">Bahnen dieses Raums · Breite in m</div>${rows}<div class="rb-sec"><button data-beven="${ii}">Gleich breit teilen</button></div>`;};
   const roomBody=(i,ii)=>{
     const side=i.dir==="y"?"links":"oben",side2=i.dir==="y"?"rechts":"unten";
     const ch=i.seams.map((v,k)=>`<span class="rb-chip">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" class="rb-x" aria-label="Naht löschen">✕</button>`:""}</span>`).join("")||`<span class="rb-none">${i.nn?"keine Naht (von dir festgelegt)":"keine Naht"}</span>`;
@@ -1869,6 +1887,7 @@ function bRender0(){
 <div class="rb-h">Nahtvorschlag</div>
 <select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${side} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${side2} bündig</option></select>
 <div class="rb-card rb-big"><span class="rb-cap">${i.man?"Nähte (von dir)":"Nähte (Vorschlag)"} · Abstand von ${side}</span><div class="rb-seams">${ch}</div>${!i.man&&i.seams.length?`<small>Grund: Raumbreite${i.nich?" inkl. Balkontür-Nische":""} + Zugabe = ${f(i.needW)} m, Rolle nur ${f(g.W)} m</small>`:""}</div>
+${bahnRows(i,ii)}
 <div class="rb-lab">Aktionen</div>
 <div class="rb-tiles"><button data-bt="${ii}" class="rb-tile">${ic1}<span>Naht antippen</span></button><button data-bm="${ii}" class="rb-tile">${ic2}<span>Naht per Maß</span></button></div>
 ${!i.man&&i.seams.length?`<button data-ba="${ii}" class="rb-prim">Vorschlag übernehmen</button>`:""}
@@ -1884,6 +1903,19 @@ function bAdd(I,v){const g=bG();if(v<=I.a0+0.05||v>=I.a1-0.05){alert("Die Naht l
 $("bOut").addEventListener("change",e=>{const c=e.target.dataset&&e.target.dataset.cut;if(c===undefined)return;
   proj.cut=proj.cut||{};if(e.target.checked)proj.cut[c]=1;else delete proj.cut[c];persist();bRender();});
 $("bOut").addEventListener("click",e=>{if(e.target.dataset&&e.target.dataset.cutreset&&confirm("Alle Haken zurücksetzen?")){proj.cut={};persist();bRender();}});
+function bWidth(ii,k,v){const g=bG(),I=bahnCalc().info[ii];if(!I||!(v>0))return;
+  const e=[I.a0,...I.seams,I.a1];if(k>e.length-3){bRender();return;}
+  const ns=I.seams.slice(),delta=(e[k]+v)-ns[k];for(let j=k;j<ns.length;j++)ns[j]=Math.round((ns[j]+delta)*1000)/1000;
+  if(ns[k]<=e[k]+0.05||ns[ns.length-1]>=I.a1-0.05){alert("Diese Breite passt nicht: Die letzte Bahn wäre zu schmal oder die Naht läge außerhalb des Raums.");bRender();return;}
+  g.sm[I.id]=ns;delete g.nn[I.id];persist();bRender();}
+$("bOut").addEventListener("change",e=>{const c=e.target.dataset&&e.target.dataset.bw;if(c===undefined)return;
+  const[ii,k]=c.split("|").map(Number),v=parseFloat(String(e.target.value).replace(",","."));
+  if(isNaN(v)||v<=0){bRender();return;}bWidth(ii,k,v>=10?v/100:v);});
+$("bOut").addEventListener("click",e=>{const b=e.target.closest&&e.target.closest("[data-bwm],[data-beven]");if(!b)return;
+  if(b.dataset.bwm!==undefined){const[ii,k,d]=b.dataset.bwm.split("|").map(Number),I=bahnCalc().info[ii];if(!I)return;
+    const e2=[I.a0,...I.seams,I.a1];bWidth(ii,k,Math.round((e2[k+1]-e2[k]+d*0.01)*100)/100);}
+  else{const g=bG(),I=bahnCalc().info[+b.dataset.beven];if(!I)return;const n=I.seams.length+1;
+    g.sm[I.id]=Array.from({length:n-1},(_,j)=>Math.round((I.a0+(I.a1-I.a0)*(j+1)/n)*1000)/1000);delete g.nn[I.id];persist();bRender();}});
 $("bOut").addEventListener("toggle",e=>{if(e.target.dataset&&e.target.dataset.k)bOpen[e.target.dataset.k]=e.target.open;},true);
 $("bOut").onclick=e=>{
   const g=bG(),sv=e.target.closest("svg[data-plan]"),ga=e.target.closest("[data-bdir]");
