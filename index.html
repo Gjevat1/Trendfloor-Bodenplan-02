@@ -243,6 +243,38 @@ html[data-ff="arial"] body{font-family:Arial,Helvetica,sans-serif}
 html[data-ff="verdana"] body{font-family:Verdana,Geneva,sans-serif}
 html[data-ff="georgia"] body{font-family:Georgia,"Times New Roman",serif}
 html[data-ff="trebuchet"] body{font-family:"Trebuchet MS","Segoe UI",sans-serif}
+
+/* ---- Raum-Leiste im neuen Stil ---- */
+.roomSheet{background:#f5f7fc;border-radius:24px 24px 0 0;border-top:0;box-shadow:0 -10px 30px #0003}
+.roomSheet::before{content:"";display:block;width:56px;height:5px;border-radius:3px;background:#cfd6e3;margin:0 auto 4px}
+.roomSheet .rsH{background:#f5f7fc;top:-6px}
+.roomSheet .rsH b{font-size:1.2rem}
+.roomSheet .rsH button{min-height:40px;padding:0 14px;border-radius:12px;background:#e3ebf7;border-color:#e3ebf7;color:#2f5fd0;font-weight:600}
+.rb-meta{color:var(--mut);font-size:.92rem;margin:2px 0 4px}
+.rb-lab{font-size:.78rem;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);font-weight:700;margin:16px 0 8px}
+.rb-h{font-size:1.15rem;font-weight:700;margin:20px 0 8px}
+.rb select{background:#fff;border-radius:16px}
+.rb-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rb-card{position:relative;display:block;background:#fff;border:1px solid var(--line);border-radius:16px;padding:10px 14px;margin:0}
+.rb-card span{display:block;font-size:.85rem;font-weight:500;color:var(--mut);margin:0 0 2px}
+.rb-grid .rb-card input{border:0;background:transparent;padding:0;min-height:0;height:auto;font-size:1.2rem;font-weight:600;width:calc(100% - 30px)}
+.rb-card b{position:absolute;right:14px;bottom:12px;font-size:.95rem;color:var(--mut);font-weight:500}
+.rb-big{margin-top:10px;padding:14px 16px}
+.rb-big .rb-cap{font-size:.78rem;letter-spacing:.05em;text-transform:uppercase;color:var(--mut);font-weight:600}
+.rb-seams{display:flex;flex-wrap:wrap;gap:6px 16px;margin:6px 0}
+.rb-chip{font-size:1.8rem;font-weight:700;color:#a83232;display:inline-flex;align-items:center;gap:4px}
+.rb-x{min-height:0!important;padding:0 6px!important;border:0!important;background:none!important;color:#a83232!important;font-size:1.1rem}
+.rb-none{color:var(--mut);font-size:1.05rem}
+.rb-big small{display:block;color:var(--mut);font-size:.85rem;margin-top:2px}
+.rb-tiles{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.rb-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:16px 8px;min-height:0;background:#fff;border-radius:16px;font-size:1rem;font-weight:600}
+.rb-prim{width:100%;margin-top:10px;background:#1f3560;color:#fff;border-color:#1f3560;border-radius:16px;font-size:1.05rem}
+.rb-sec{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+.rb-sec button{background:#e9ebf1;border-color:#e9ebf1;color:#4b5565;border-radius:16px;font-weight:500}
+.rb-sec button.rb-red{color:#b3261e}
+.rb-sec button:only-child{grid-column:1/-1}
+html[data-ui] .rb-grid .rb-card input{min-height:0}
+html[data-ui] .rb-tile{min-height:0}
 </style>
 </head>
 <body>
@@ -450,7 +482,7 @@ html[data-ff="trebuchet"] body{font-family:"Trebuchet MS","Segoe UI",sans-serif}
   </aside>
 </div>
 <script>
-const APP_VERSION="071"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
+const APP_VERSION="072"; // bei jeder neuen Version erhöhen – zusammen mit CACHE in sw.js
 const $=id=>document.getElementById(id);
 const UIKEY="bpUI";
 function uiLoad(){try{return Object.assign({sz:100,ff:"sys"},JSON.parse(localStorage.getItem(UIKEY)||"{}"));}catch(e){return{sz:100,ff:"sys"};}}
@@ -1824,8 +1856,23 @@ function bRender0(){
   const need=R.info.reduce((a,i)=>a+i.sock,0);
   const sockH=`<p class="box">Wandsockel (an die Wand geklebt), Streifenbreite ${f(sh*100,1)} cm. Orange eingezeichnet ist nur die Menge, die für das Projekt gebraucht wird.<br>${needs.map(nd=>`<b>${esc(nd.r)}</b>: Bedarf ${f(nd.n)} lfm → ${nd.got||"–"}${nd.miss>0.01?" <b>⚠ es fehlen "+f(nd.miss)+" lfm</b>":" ✓"}`).join("<br>")}<br><b>Bedarf gesamt: ${f(need)} lfm · aus Resten: ${f(avail)} lfm</b></p>`;
   let tot=0;const plan=R.info.map(i=>{tot+=i.m2;return `${esc(i.r)}: ${f(Math.max(i.bx,i.by))} × ${f(Math.min(i.bx,i.by))} m · ${f(i.m2)} m²`;}).join("<br>");
-  const roomBody=(i,ii)=>{const ch=i.seams.map((v,k)=>`<span style="display:inline-block;border:1px solid #d62828;color:#d62828;border-radius:14px;padding:4px 10px;margin:2px">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" style="border:0;background:none;color:#d62828;padding:0 0 0 4px">✕</button>`:""}</span>`).join("")||(i.nn?"keine Naht (von dir festgelegt)":"keine Naht");
-    return `quer zur Bahn ${f(i.a1-i.a0)} m${i.nich?" (mit Balkontür-Nische)":""} · Rolle ${f(g.W)} m<br><label>Verlegerichtung<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select></label><div style="display:flex;gap:6px;flex-wrap:wrap;margin:6px 0">${[["l","links"],["r","rechts"],["t","oben"],["b","unten"]].map(o=>`<label style="flex:1;min-width:70px;font-size:.85rem">Zugabe ${o[1]} (cm)<input type="number" min="0" step="0.5" inputmode="decimal" data-bza="${ii}|${o[0]}" value="${i.own[o[0]]==null?"":i.own[o[0]]}" placeholder="${f(i.zr[o[0]],1)}" style="min-height:48px;font-size:1rem"></label>`).join("")}</div><label>Nahtvorschlag<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${i.dir==="y"?"links":"oben"} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${i.dir==="y"?"rechts":"unten"} bündig</option></select></label>Nähte ${i.man?"(von dir)":"(Vorschlag)"}${!i.man&&i.seams.length?` <small style="color:#5a6b80">– Grund: Raumbreite${i.nich?" inkl. Balkontür-Nische":""} + Zugabe = ${f(i.needW)} m, Rolle nur ${f(g.W)} m</small>`:""}, Abstand von ${i.dir==="y"?"links":"oben"}:<br>${ch}<br><button data-bt="${ii}">＋ Naht antippen</button> <button data-bm="${ii}">＋ Naht per Maß</button>${i.man?`${i.nn?"":` <button data-bn="${ii}">Keine Naht</button>`} <button data-bz="${ii}">Zurück zum Vorschlag</button>`:i.seams.length?` <button data-bn="${ii}">Vorschlag entfernen</button> <button data-ba="${ii}">Vorschlag übernehmen</button>`:""}<br><button data-bres="${ii}" style="margin-top:8px;color:#b3261e">Raum zurücksetzen (Richtung, Zugabe, Nähte)</button>`;};
+  const roomBody=(i,ii)=>{
+    const side=i.dir==="y"?"links":"oben",side2=i.dir==="y"?"rechts":"unten";
+    const ch=i.seams.map((v,k)=>`<span class="rb-chip">${f(v-i.ao)} m${i.man?` <button data-bx="${ii}|${k}" class="rb-x" aria-label="Naht löschen">✕</button>`:""}</span>`).join("")||`<span class="rb-none">${i.nn?"keine Naht (von dir festgelegt)":"keine Naht"}</span>`;
+    const ic1='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2f5fd0" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="9"/><path d="M12 8v8M8 12h8"/></svg>';
+    const ic2='<svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#2f5fd0" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="1.5" y="8.5" width="21" height="7" rx="1.5" transform="rotate(-40 12 12)"/><path d="M8 7.5l1.6 1.4M11 10l1.2 1M13.6 12.5l1.6 1.4" transform="rotate(0 12 12)"/></svg>';
+    return `<div class="rb"><div class="rb-meta">quer zur Bahn ${f(i.a1-i.a0)} m${i.nich?" (mit Balkontür-Nische)":""} · Rolle ${f(g.W)} m</div>
+<div class="rb-lab">Verlegerichtung</div>
+<select data-bd="${ii}">${[["y0","↑ senkrecht"],["y1","↓ senkrecht (umgekehrt)"],["x0","→ waagrecht"],["x1","← waagrecht (umgekehrt)"]].map(o=>`<option value="${o[0]}"${o[0]===i.dir+(i.fl?"1":"0")?" selected":""}>${o[1]}</option>`).join("")}</select>
+<div class="rb-lab">Zugaben · in cm</div>
+<div class="rb-grid">${[["l","Links"],["r","Rechts"],["t","Oben"],["b","Unten"]].map(o=>`<label class="rb-card"><span>${o[1]}</span><input type="number" min="0" step="0.5" inputmode="decimal" data-bza="${ii}|${o[0]}" value="${i.own[o[0]]==null?"":i.own[o[0]]}" placeholder="${f(i.zr[o[0]],1)}"><b>cm</b></label>`).join("")}</div>
+<div class="rb-h">Nahtvorschlag</div>
+<select data-bal="${ii}"><option value="lo"${i.al!=="hi"?" selected":""}>${side} bündig</option><option value="hi"${i.al==="hi"?" selected":""}>${side2} bündig</option></select>
+<div class="rb-card rb-big"><span class="rb-cap">${i.man?"Nähte (von dir)":"Nähte (Vorschlag)"} · Abstand von ${side}</span><div class="rb-seams">${ch}</div>${!i.man&&i.seams.length?`<small>Grund: Raumbreite${i.nich?" inkl. Balkontür-Nische":""} + Zugabe = ${f(i.needW)} m, Rolle nur ${f(g.W)} m</small>`:""}</div>
+<div class="rb-lab">Aktionen</div>
+<div class="rb-tiles"><button data-bt="${ii}" class="rb-tile">${ic1}<span>Naht antippen</span></button><button data-bm="${ii}" class="rb-tile">${ic2}<span>Naht per Maß</span></button></div>
+${!i.man&&i.seams.length?`<button data-ba="${ii}" class="rb-prim">Vorschlag übernehmen</button>`:""}
+<div class="rb-sec">${i.man?`${i.nn?"":`<button data-bn="${ii}">Keine Naht</button>`}<button data-bz="${ii}">Zurück zum Vorschlag</button>`:i.seams.length?`<button data-bn="${ii}">Vorschlag entfernen</button>`:""}<button data-bres="${ii}" class="rb-red">Raum zurücksetzen</button></div></div>`;};
   const nahtTxt=i=>`${i.seams.length} ${i.seams.length===1?"Naht":"Nähte"}`;
   const ctl=R.info.map((i,ii)=>{const op=("r"+i.id) in bOpen?bOpen["r"+i.id]:true;
     return `<div class="box"><details data-k="r${i.id}"${op?" open":""}><summary style="font-weight:700;padding:6px 0;cursor:pointer">${esc(i.r)} · ${nahtTxt(i)}</summary>${roomBody(i,ii)}</details></div>`;}).join("");
